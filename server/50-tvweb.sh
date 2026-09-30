@@ -97,7 +97,7 @@ if [ "$need_sam_restart" -eq 1 ]; then
           sleep 1
           n=$((n + 1))
           pid=$(systemctl show -p MainPID sam 2>/dev/null | sed -n 's/^MainPID=//p')
-          [ -n "$pid" ] && [ "$pid" != 0 ] && [ "$pid" != "$old_pid" ] || continue
+          case "$pid" in ""|0|"$old_pid") continue ;; esac
           if luna-send -n 1 -f luna://com.webos.applicationManager/getForegroundAppInfo '{}' >/dev/null 2>&1; then
             luna-send -n 1 -f luna://com.webos.applicationManager/launch "{\"id\":\"$fg_app\"}" >/dev/null 2>&1 || true
             echo "$(date): sam back (pid $pid), relaunched $fg_app"
