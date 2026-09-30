@@ -1275,14 +1275,14 @@ footer{margin-top:38px;font-size:12px;letter-spacing:.10em;text-transform:upperc
   </details>
 
   <details class="pv-d" id="disc-system-tiles">
-    <summary><span data-t="apps.tiles">Hide home screen system apps</span> <span class="cur" id="apps-tiles-summary"></span></summary>
+    <summary><span data-t="apps.tiles">Hide home screen system apps</span> <span class="pv-badge" style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--w06);color:var(--t2)" data-t="common.experimental">Experimental</span> <span class="cur" id="apps-tiles-summary"></span></summary>
     <div class="pv-sub" data-t="apps.tiles.desc">Hide built-in LG apps (Gallery, Music, Sports, Always Ready, Alexa, etc.) from the TV's home launcher ribbon.</div>
     <div class="btns" style="margin-top:14px;max-width:520px">
       <button type="button" id="tile-hiding-off" onclick="setTileHiding(false)" data-t="apps.tiles.off">Off (Stock)</button>
       <button type="button" id="tile-hiding-on" onclick="setTileHiding(true)" data-t="apps.tiles.on">On (Custom)</button>
     </div>
     <div class="sub" id="apps-hidden-count" style="margin-top:8px">&mdash;</div>
-    <div class="pv-note" id="tile-hiding-warning" style="margin-top:12px" hidden><b data-t="apps.tiles.warn.lead">When enabled:</b> <span data-t="apps.tiles.warn">On each cold boot of your TV, this can cause a brief 1-second blank screen or input refresh before returning to your active HDMI source.</span></div>
+    <div class="pv-note" id="tile-hiding-warning" style="margin-top:12px"><b data-t="apps.tiles.warn.lead">Experimental:</b> <span data-t="apps.tiles.warn">This restarts the TV's app manager on every full restart. Hidden apps can show on the Home screen for up to 90 seconds after one, and an HDMI input in use comes back only after that. If apps play a black picture with no sound, turn this off and fully restart the TV.</span></div>
     <div class="prot-table" id="apps-tiles-list" style="margin-top:16px">
       <div class="sub" style="padding:16px 0" data-t="apps.loadingSystem">Loading system apps&hellip;</div>
     </div>
@@ -3856,7 +3856,6 @@ function renderAppsPanel() {
   const tilesList = q('apps-tiles-list');
   const hiddenCount = q('apps-hidden-count');
   const tilesSummary = q('apps-tiles-summary');
-  const warningBox = q('tile-hiding-warning');
   const btnOff = q('tile-hiding-off');
   const btnOn = q('tile-hiding-on');
   const tiles = d.systemTiles || [];
@@ -3872,9 +3871,6 @@ function renderAppsPanel() {
     btnOn.classList.toggle('on', tileHidingEnabled);
     btnOff.disabled = !d.writable;
     btnOn.disabled = !d.writable;
-  }
-  if (warningBox) {
-    warningBox.hidden = !tileHidingEnabled;
   }
 
   if (hiddenCount) {

@@ -352,12 +352,12 @@
   "from": "All built-in apps are visible (stock behavior). Select On (Custom) above to hide apps from the home launcher."
  },
  "apps.tiles.warn": {
-  "text": "En cada arranque en frío de la TV puede causar un parpadeo de un segundo o un refresco de la entrada antes de volver a la fuente HDMI activa.",
-  "from": "On each cold boot of your TV, this can cause a brief 1-second blank screen or input refresh before returning to your active HDMI source."
+  "text": "Esto reinicia el gestor de aplicaciones de la TV en cada reinicio completo. Las aplicaciones ocultas pueden verse en la pantalla de inicio hasta 90 segundos después, y la entrada HDMI en uso no vuelve hasta entonces. Si las aplicaciones muestran la imagen en negro y sin sonido, desactiva esta opción y reinicia la TV por completo.",
+  "from": "This restarts the TV's app manager on every full restart. Hidden apps can show on the Home screen for up to 90 seconds after one, and an HDMI input in use comes back only after that. If apps play a black picture with no sound, turn this off and fully restart the TV."
  },
  "apps.tiles.warn.lead": {
-  "text": "Cuando está activado:",
-  "from": "When enabled:"
+  "text": "Experimental:",
+  "from": "Experimental:"
  },
  "apps.uninstall": {
   "text": "Desinstalar aplicaciones",
@@ -394,6 +394,10 @@
  "common.controlsOff": {
   "text": "Los controles están desactivados en config.json.",
   "from": "Controls are disabled in config.json."
+ },
+ "common.experimental": {
+  "text": "Experimental",
+  "from": "Experimental"
  },
  "common.off": {
   "text": "Desactivado",
@@ -3436,12 +3440,12 @@
   "from": "Enabling tile hiding…"
  },
  "tv.apps.tiles.off.hint": {
-  "text": "Comportamiento de serie activo. Pulsa OK para activar el ocultado de apps de sistema.",
-  "from": "Stock behavior active. Press OK to enable system app hiding."
+  "text": "Experimental. Comportamiento de serie activo. Pulsa OK para activar el ocultado de apps de sistema.",
+  "from": "Experimental. Stock behavior active. Press OK to enable system app hiding."
  },
  "tv.apps.tiles.on.hint": {
-  "text": "Cuando está activada: en cada arranque en frío de la TV puede producirse un parpadeo breve de 1 segundo o una actualización de la entrada antes de volver a la fuente HDMI activa.",
-  "from": "When enabled: On each cold boot of your TV, this can cause a brief 1-second blank screen or input refresh before returning to your active HDMI source."
+  "text": "Experimental. Las apps ocultas pueden verse hasta 90 segundos después de un reinicio completo de la TV. Si las apps muestran la imagen en negro y sin sonido, desactiva esta opción y reinicia la TV por completo.",
+  "from": "Experimental. Hidden apps can show for up to 90 seconds after a full restart of the TV. If apps play a black picture with no sound, turn this off and fully restart the TV."
  },
  "tv.apps.uninstall.again": {
   "text": "Pulsa OK otra vez para desinstalar {name}",
