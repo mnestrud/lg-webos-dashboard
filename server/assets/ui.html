@@ -1590,21 +1590,20 @@ footer{margin-top:38px;font-size:12px;letter-spacing:.10em;text-transform:upperc
 
 <script src="/assets/i18n.js"></script>
 <script>
-/* A token in the link (#k= from the TV's QR codes, ?k= from older bookmarks)
-   moves into a cookie and out of the address bar, so it does not linger in
-   history or travel with a copied URL, and the browser sends it with every
-   request, images included. K is left set only where cookies are blocked. */
+/* The token arrives once in the link (a bookmark, or the TV's QR codes) and
+   is kept in the browser, so it can come out of the address bar and stay out
+   of history and copied URLs. Where storage is blocked it stays in the URL,
+   or a reload would lose it. */
 const K = (() => {
   const s = new URLSearchParams(location.search);
-  const h = new URLSearchParams(location.hash.slice(1));
-  const k = h.get('k') || s.get('k') || '';
-  if (!k) return '';
-  // 400 days, the longest Chrome keeps a cookie.
-  document.cookie = 'tvweb_k=' + encodeURIComponent(k) + '; path=/; max-age=34560000; samesite=strict';
+  const k = s.get('k');
+  if (k === null) {
+    try { return localStorage.getItem('tvweb_k') || ''; } catch (e) { return ''; }
+  }
+  try { localStorage.setItem('tvweb_k', k); } catch (e) { return k; }
   s.delete('k');
-  h.delete('k');
-  history.replaceState(history.state, '', location.pathname + (s.toString() ? '?' + s : '') + (h.toString() ? '#' + h : ''));
-  return /(?:^|;\s*)tvweb_k=/.test(document.cookie) ? '' : k;
+  history.replaceState(history.state, '', location.pathname + (s.toString() ? '?' + s : '') + location.hash);
+  return k;
 })();
 const q = id => document.getElementById(id);
 

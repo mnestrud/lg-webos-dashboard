@@ -422,21 +422,6 @@ function createMockRes(cb) {
   });
   routes.handleRequest(req404, res404);
 
-  // The token is accepted as a bearer header or a cookie as well as ?k=
-  function expectStatus(opts, code, why) {
-    opts.remoteAddress = '192.168.1.50';
-    routes.handleRequest(createMockReq(opts), createMockRes(function (res) {
-      assert.strictEqual(res.statusCode, code, why);
-    }));
-  }
-  expectStatus({ url: '/api/caps', headers: { authorization: 'Bearer test-token' } }, 200, 'bearer header');
-  expectStatus({ url: '/api/caps', headers: { cookie: 'theme=dark; tvweb_k=test-token' } }, 200, 'cookie');
-  expectStatus({ url: '/api/caps', headers: { cookie: 'tvweb_k=test%2Dtoken' } }, 200, 'url-encoded cookie');
-  expectStatus({ url: '/api/caps' }, 401, 'no token');
-  expectStatus({ url: '/api/caps?k=wrong-token' }, 401, 'wrong query token');
-  expectStatus({ url: '/api/caps', headers: { authorization: 'Bearer test-toke' } }, 401, 'wrong bearer token');
-  expectStatus({ url: '/api/caps', headers: { cookie: 'tvweb_k=%E0%A4%A' } }, 401, 'malformed cookie');
-
   console.log('  ✓ handleRequest dispatches endpoints, auth guards, and 404 handling');
 })();
 

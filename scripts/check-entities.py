@@ -24,7 +24,7 @@ check can run against a recorded payload with no TV on the network.
 
 Exits non-zero if any path fails to resolve.
 """
-import json, os, re, sys, urllib.request, urllib.error, pathlib
+import json, os, re, sys, urllib.request, urllib.error, urllib.parse, pathlib
 
 args = sys.argv[1:]
 
@@ -55,11 +55,11 @@ if stats_file:
 elif not tv:
     sys.exit('usage: check-entities.py <tv-ip> [--token TOKEN] [--stats FILE]')
 else:
-    req = urllib.request.Request(f'http://{tv}:8080/api/stats')
+    url = f'http://{tv}:8080/api/stats'
     if token:
-        req.add_header('Authorization', 'Bearer ' + token)
+        url += '?k=' + urllib.parse.quote(token, safe='')
     try:
-        with urllib.request.urlopen(req, timeout=10) as r:
+        with urllib.request.urlopen(url, timeout=10) as r:
             stats = json.load(r)
     except urllib.error.HTTPError as e:
         if e.code == 401:
