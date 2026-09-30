@@ -38,15 +38,14 @@ fi
 # launch goes to the wrong runner and nothing draws. Comparing the manifest
 # either side of the mount says exactly when that is, with no call onto the bus.
 # Seconds into boot is the cheapest moment to restart it.
+need_sam_restart=0
 if [ -f /var/lib/tvweb/screensaver/.tvweb-screensaver ]; then
   ssapp=/usr/palm/applications/com.webos.app.screensaver
   stock_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' "$ssapp/appinfo.json" 2>/dev/null)
   mount --bind /var/lib/tvweb/screensaver "$ssapp" 2>/dev/null || true
   staged_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' "$ssapp/appinfo.json" 2>/dev/null)
-  # --no-block: stopping sam waits on every app in its cgroup, which is most of
-  # a minute, and no hook may hold up boot for that.
   if [ -n "$stock_type" ] && [ -n "$staged_type" ] && [ "$stock_type" != "$staged_type" ]; then
-    systemctl restart --no-block sam >/dev/null 2>&1 || true
+    need_sam_restart=1
   fi
 fi
 
@@ -67,30 +66,60 @@ if [ ! -f /var/lib/tvweb/.from-homebrew-channel ] && [ -f /var/lib/tvweb/tile_hi
       done
     fi
   done < /var/lib/tvweb/hidden_apps
-  if [ "$mounted" -eq 1 ]; then
-    # Capture the active foreground app before restarting SAM so we can restore it
-    fg_app=$(luna-send -n 1 -f luna://com.webos.applicationManager/getForegroundAppInfo '{}' 2>/dev/null | sed -n 's/.*"appId": *"\([^"]*\)".*/\1/p')
+  [ "$mounted" -eq 1 ] && need_sam_restart=1
+fi
 
-    if command -v systemctl >/dev/null 2>&1; then
-      killall -9 LunaExecutable >/dev/null 2>&1 || true
-      systemctl kill -s 9 sam.service >/dev/null 2>&1 || systemctl restart --no-block sam >/dev/null 2>&1 || true
-    elif command -v initctl >/dev/null 2>&1; then
+# One restart of sam covers both blocks above. At boot it must be a graceful
+# one: a SIGKILL of sam.service here, the fast path the dashboard uses once the
+# set is up, can leave every video sink muted and disconnected until a full
+# reboot - apps play black with no sound (#366). Seen when the kill landed
+# while sam was already stopping, with videooutputd up since about 10 s into
+# boot.
+if [ "$need_sam_restart" -eq 1 ]; then
+  # Captured so the user is not stranded on the Home screen if they were on an
+  # HDMI port or any other app.
+  fg_app=$(luna-send -n 1 -f luna://com.webos.applicationManager/getForegroundAppInfo '{}' 2>/dev/null | sed -n 's/.*"appId": *"\([^"]*\)".*/\1/p')
+  [ "$fg_app" = "com.webos.app.home" ] && fg_app=
+
+  if command -v systemctl >/dev/null 2>&1; then
+    old_pid=$(systemctl show -p MainPID sam 2>/dev/null | sed -n 's/^MainPID=//p')
+    # --no-block: stopping sam waits on every app in its cgroup, LunaExecutable
+    # ignoring SIGTERM among them, which is up to 90 s, and no hook may hold up
+    # boot for that.
+    systemctl restart --no-block sam >/dev/null 2>&1 || true
+    echo "$(date): sam restart queued (pid ${old_pid:-none})"
+    if [ -n "$fg_app" ]; then
+      (
+        # The old sam keeps answering while it stops, so wait for a new PID
+        # before relaunching, or the launch goes to the process on its way out.
+        n=0
+        while [ "$n" -lt 180 ]; do
+          sleep 1
+          n=$((n + 1))
+          pid=$(systemctl show -p MainPID sam 2>/dev/null | sed -n 's/^MainPID=//p')
+          [ -n "$pid" ] && [ "$pid" != 0 ] && [ "$pid" != "$old_pid" ] || continue
+          if luna-send -n 1 -f luna://com.webos.applicationManager/getForegroundAppInfo '{}' >/dev/null 2>&1; then
+            luna-send -n 1 -f luna://com.webos.applicationManager/launch "{\"id\":\"$fg_app\"}" >/dev/null 2>&1 || true
+            echo "$(date): sam back (pid $pid), relaunched $fg_app"
+            break
+          fi
+        done
+      ) &
+    fi
+  else
+    if command -v initctl >/dev/null 2>&1; then
       initctl restart sam >/dev/null 2>&1 || pkill -9 -x sam >/dev/null 2>&1 || true
     else
       pkill -9 -x sam >/dev/null 2>&1 || true
     fi
-
-    # Wait for SAM to become responsive (support BusyBox usleep with fallback)
+    # Upstart respawns sam in about a second (support BusyBox usleep with fallback)
     for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
       usleep 200000 2>/dev/null || sleep 1
       if luna-send -n 1 -f luna://com.webos.applicationManager/getForegroundAppInfo '{}' >/dev/null 2>&1; then
         break
       fi
     done
-
-    # If the user was on an HDMI port or any non-home app, immediately restore it
-    # so they are never stranded on the Home screen
-    if [ -n "$fg_app" ] && [ "$fg_app" != "com.webos.app.home" ]; then
+    if [ -n "$fg_app" ]; then
       luna-send -n 1 -f luna://com.webos.applicationManager/launch "{\"id\":\"$fg_app\"}" >/dev/null 2>&1 || true
     fi
   fi
