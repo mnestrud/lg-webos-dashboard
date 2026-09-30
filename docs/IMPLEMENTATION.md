@@ -144,8 +144,10 @@ against a `panelUsageTime` of 28614 (÷6 = 4769).
 ## Panel detection
 
 Panel-lifecycle features are gated on panel type, detected once via
-model name matching (`OLED...`), `/var/luna/preferences/paneltype_oled`, or pnwash filesystem
-records. `panelUsageTime` is not a signal: LCD TVs report it too. On an LCD/QNED TV they are
+`/var/luna/preferences/paneltype_oled`, the model name (`OLED...`, or one of the OLED lines
+whose model numbers lack the prefix: Flex and Objet Posé `LX`, Easel `ART9x`), or pnwash
+filesystem records. The pnwash check also runs when the model name is known, so an unlisted
+OLED without the prefix is still found. `panelUsageTime` is not a signal: LCD TVs report it too. On an LCD/QNED TV they are
 omitted from the dashboard and withheld from MQTT discovery, with retained discovery configs
 cleared so they do not linger in Home Assistant as orphans. Reporting `0 hours` would read as a real
 measurement.
