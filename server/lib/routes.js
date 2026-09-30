@@ -782,6 +782,9 @@ function handleRequest(req, res) {
     return appsModule.getApps(function (d) {
       d.tileHidingAvailable = !fromHomebrewChannel();
       if (!d.tileHidingAvailable) { d.systemTiles = []; d.tileHidingEnabled = false; d.hiddenCount = 0; }
+      // The boot hook restarts sam gracefully on systemd, which waits up to 90 s
+      // on LunaExecutable. Upstart restarts it in about a second.
+      d.tileHidingSlowBoot = !!servicesModule.getSystemctl();
       servicesModule.getServices(function (sRes) {
         if (sRes && sRes.services) d.services = sRes.services;
         send(res, 200, JSON.stringify(d));

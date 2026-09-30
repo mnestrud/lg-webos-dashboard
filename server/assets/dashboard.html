@@ -619,7 +619,9 @@ function appsRows(d) {
       on: tileHidingEnabled,
       press: tileHidingEnabled ? t('tv.apps.tiles.disable', 'Press OK to disable tile hiding') : t('tv.apps.tiles.enable', 'Press OK to enable tile hiding'),
       hint: tileHidingEnabled
-        ? t('tv.apps.tiles.on.hint', 'Experimental. Hidden apps can show for up to 90 seconds after a full restart of the TV. If apps play a black picture with no sound, turn this off and fully restart the TV.')
+        ? (d.tileHidingSlowBoot
+          ? t('tv.apps.tiles.on.hint', 'Experimental. Hidden apps can show for up to 90 seconds after a full restart of the TV. If apps play a black picture with no sound, turn this off and fully restart the TV.')
+          : t('tv.apps.tiles.on.hint.quick', "Experimental. This restarts the TV's app manager on every full restart."))
         : t('tv.apps.tiles.off.hint', 'Experimental. Stock behavior active. Press OK to enable system app hiding.')
     });
     if (tileHidingEnabled) {

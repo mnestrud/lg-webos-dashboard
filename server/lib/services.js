@@ -439,5 +439,6 @@ module.exports = {
   getServices: getServices,
   toggleService: toggleService,
   isDisabled: isDisabled,
+  getSystemctl: getSystemctl,
   startEnforcing: startEnforcing
 };

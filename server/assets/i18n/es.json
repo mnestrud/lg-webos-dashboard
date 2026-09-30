@@ -359,6 +359,10 @@
   "text": "Experimental:",
   "from": "Experimental:"
  },
+ "apps.tiles.warn.quick": {
+  "text": "Esto reinicia el gestor de aplicaciones de la TV en cada reinicio completo.",
+  "from": "This restarts the TV's app manager on every full restart."
+ },
  "apps.uninstall": {
   "text": "Desinstalar aplicaciones",
   "from": "Uninstall applications"
@@ -3446,6 +3450,10 @@
  "tv.apps.tiles.on.hint": {
   "text": "Experimental. Las apps ocultas pueden verse hasta 90 segundos después de un reinicio completo de la TV. Si las apps muestran la imagen en negro y sin sonido, desactiva esta opción y reinicia la TV por completo.",
   "from": "Experimental. Hidden apps can show for up to 90 seconds after a full restart of the TV. If apps play a black picture with no sound, turn this off and fully restart the TV."
+ },
+ "tv.apps.tiles.on.hint.quick": {
+  "text": "Experimental. Esto reinicia el gestor de aplicaciones de la TV en cada reinicio completo.",
+  "from": "Experimental. This restarts the TV's app manager on every full restart."
  },
  "tv.apps.uninstall.again": {
   "text": "Pulsa OK otra vez para desinstalar {name}",

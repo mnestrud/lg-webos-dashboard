@@ -1282,7 +1282,7 @@ footer{margin-top:38px;font-size:12px;letter-spacing:.10em;text-transform:upperc
       <button type="button" id="tile-hiding-on" onclick="setTileHiding(true)" data-t="apps.tiles.on">On (Custom)</button>
     </div>
     <div class="sub" id="apps-hidden-count" style="margin-top:8px">&mdash;</div>
-    <div class="pv-note" id="tile-hiding-warning" style="margin-top:12px"><b data-t="apps.tiles.warn.lead">Experimental:</b> <span data-t="apps.tiles.warn">This restarts the TV's app manager on every full restart. Hidden apps can show on the Home screen for up to 90 seconds after one, and an HDMI input in use comes back only after that. If apps play a black picture with no sound, turn this off and fully restart the TV.</span></div>
+    <div class="pv-note" id="tile-hiding-warning" style="margin-top:12px"><b data-t="apps.tiles.warn.lead">Experimental:</b> <span id="tile-hiding-warning-text">&mdash;</span></div>
     <div class="prot-table" id="apps-tiles-list" style="margin-top:16px">
       <div class="sub" style="padding:16px 0" data-t="apps.loadingSystem">Loading system apps&hellip;</div>
     </div>
@@ -3856,6 +3856,7 @@ function renderAppsPanel() {
   const tilesList = q('apps-tiles-list');
   const hiddenCount = q('apps-hidden-count');
   const tilesSummary = q('apps-tiles-summary');
+  const warningText = q('tile-hiding-warning-text');
   const btnOff = q('tile-hiding-off');
   const btnOn = q('tile-hiding-on');
   const tiles = d.systemTiles || [];
@@ -3864,6 +3865,12 @@ function renderAppsPanel() {
   if (tilesDisc) {
     tilesDisc.hidden = d.tileHidingAvailable === false;
     tilesDisc.open = tileHidingEnabled;
+  }
+
+  if (warningText) {
+    warningText.textContent = d.tileHidingSlowBoot
+      ? t('apps.tiles.warn', "This restarts the TV's app manager on every full restart. Hidden apps can show on the Home screen for up to 90 seconds after one, and an HDMI input in use comes back only after that. If apps play a black picture with no sound, turn this off and fully restart the TV.")
+      : t('apps.tiles.warn.quick', "This restarts the TV's app manager on every full restart.");
   }
 
   if (btnOff && btnOn) {
@@ -4090,6 +4097,7 @@ async function toggleTileVisibility(appId, makeHidden) {
 }
 
 async function setTileHiding(enabled) {
+  const warningText = q('tile-hiding-warning-text');
   const btnOff = q('tile-hiding-off');
   const btnOn = q('tile-hiding-on');
   if (btnOff) btnOff.disabled = true;
