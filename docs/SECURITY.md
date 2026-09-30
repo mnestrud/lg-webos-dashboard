@@ -6,9 +6,14 @@ use every enabled control. On a home LAN that is usually the point; understand
 it before exposing it more widely.
 
 - **Set a token.** Put `"token": "something-long"` in `config.json` and every
-  `/api/` request must carry `?k=something-long`. Bookmark the dashboard with
-  the token in the URL. This gates the HTTP API only &mdash; **MQTT and the Home
-  Assistant integration are unaffected**, since they use a separate channel.
+  `/api/` request must carry it. Open the dashboard once as
+  `http://<tv-ip>:8080/#k=something-long`, or scan a QR code on the TV app: the
+  page keeps the token in a cookie and takes it out of the address bar, so the
+  plain address works from then on and the token stays out of history and
+  shared links. Scripts send `Authorization: Bearer something-long`. `?k=` is
+  still accepted, but puts the token in the request line. This gates the HTTP
+  API only &mdash; **MQTT and the Home Assistant integration are unaffected**,
+  since they use a separate channel.
 - **`"allowPower": false`** hides and refuses power off, power on and reboot,
   in the dashboard and in Home Assistant, for a TV that should never be
   switched off over the network. The other controls stay.

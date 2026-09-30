@@ -473,9 +473,37 @@ function send(res, code, body, type) {
   res.end(body);
 }
 
+// The token can arrive three ways. The dashboard keeps it in a cookie so it
+// stays out of the address bar, history and copied links, and so <img> loads
+// carry it too. Scripts send `Authorization: Bearer`. `?k=` stays for the
+// links, bookmarks and Home Assistant sensors already using it.
+function presentedTokens(q, req) {
+  var out = [];
+  if (q && typeof q.k === 'string') out.push(q.k);
+  var h = (req && req.headers) || {};
+  var m = /^Bearer\s+(.+)$/i.exec(h.authorization || '');
+  if (m) out.push(m[1].trim());
+  var parts = String(h.cookie || '').split(';');
+  for (var i = 0; i < parts.length; i++) {
+    var eq = parts[i].indexOf('=');
+    if (eq < 0 || parts[i].slice(0, eq).trim() !== 'tvweb_k') continue;
+    try { out.push(decodeURIComponent(parts[i].slice(eq + 1).trim())); } catch (e) { /* malformed */ }
+  }
+  return out;
+}
+
+// crypto.timingSafeEqual is Node 6.6+; the TV runs 0.12.
+function sameString(a, b) {
+  if (a.length !== b.length) return false;
+  var diff = 0;
+  for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 function authed(q, req) {
   if (!config.token) return true;
-  if (q && q.k === config.token) return true;
+  var got = presentedTokens(q, req);
+  for (var i = 0; i < got.length; i++) if (sameString(got[i], config.token)) return true;
   // The on-TV dashboard app fetches from localhost and has no way to carry a
   // token (there is no login prompt on a TV remote).  A process on the TV
   // already has root, so the token adds nothing for local requests.

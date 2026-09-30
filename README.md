@@ -578,7 +578,7 @@ To narrow it, set one of these in `config.json` and restart the server:
 
 | Setting                        | Browser on the network                  | App on the TV | MQTT  |
 | :----------------------------- | :-------------------------------------- | :------------ | :---- |
-| `"token": "your-secret-token"` | with `?k=your-secret-token`             | works         | works |
+| `"token": "your-secret-token"` | opened once with `#k=your-secret-token` | works         | works |
 | `"host": "127.0.0.1"`          | no — port 8080 is closed to the network | works         | works |
 | `"web": { "enabled": false }`  | no                                      | does not work | works |
 

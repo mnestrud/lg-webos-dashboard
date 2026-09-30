@@ -69,8 +69,9 @@ var CONFIG = {
   // hides and refuses them.
   allowPower: true,
 
-  // Optional shared secret. If non-empty, every /api/ request must carry
-  // ?k=<token>. Keeps casual LAN devices out.
+  // Optional shared secret. If non-empty, every /api/ request must carry it,
+  // as `Authorization: Bearer <token>` or ?k=<token>. Keeps casual LAN
+  // devices out.
   token: '',
 
   // Home Assistant & MQTT Integration

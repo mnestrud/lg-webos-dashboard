@@ -1133,8 +1133,10 @@ function renderQr(r) {
   if (!r.web || !lanOrigin) { box.className = 'h-qr'; return false; }
   var url = lanOrigin + (r.web === true ? '/' : r.web);
   // The code carries the token so the phone can use the page; the address
-  // printed beneath it leaves it out.
-  var scan = lanKey ? url + (url.indexOf('?') < 0 ? '?' : '&') + 'k=' + encodeURIComponent(lanKey) : url;
+  // printed beneath it leaves it out. In the fragment, which the browser never
+  // sends, so the token is not in the request line; the page moves it to a
+  // cookie.
+  var scan = lanKey ? url + '#k=' + encodeURIComponent(lanKey) : url;
   if (!qrDraw(document.getElementById('hintQrSvg'), scan)) { box.className = 'h-qr'; return false; }
   document.getElementById('hintUrl').textContent = url.replace(/^https?:\/\//, '');
   box.className = 'h-qr on';
