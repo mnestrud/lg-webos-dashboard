@@ -473,6 +473,8 @@ mosquitto_sub -h <broker> -t 'lgtv/#' -v
 
 Node-RED, Telegraf into InfluxDB, or a script subscribing to that topic all work the same way. The Discovery messages are simply ignored by anything that is not Home Assistant.
 
+With [PicCap](https://github.com/TBSniller/piccap) installed for ambient lighting, `"piccap": { "enabled": true }` in `config.json` adds its capture state at `<topicPrefix>/state/piccap/power` and accepts `ON` or `OFF` on `<topicPrefix>/command/piccap/power`. It is off by default. [docs/HOME-ASSISTANT.md](docs/HOME-ASSISTANT.md#piccap) has a switch for it.
+
 ### Multiple TVs
 
 Each TV on the same broker needs a unique `topicPrefix` and `device.id`, otherwise they overwrite each other's state and disconnect each other.

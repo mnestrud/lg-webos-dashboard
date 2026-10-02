@@ -599,6 +599,8 @@ Custom QML screensavers are staged in `/var/lib/tvweb/screensaver` and bind-moun
 
 ## Optional PicCap MQTT control
 
-When `org.webosbrew.piccap.service/status` reports capture state, telemetry includes `piccap.isRunning` and the bridge publishes retained `<prefix>/state/piccap/isRunning`. The bridge accepts `true` or `false` on `<prefix>/command/piccap/power` and refreshes state after each command. Status follows telemetry polling; restarting tvweb forces a fresh check after PicCap installation changes.
+Off unless `"piccap": { "enabled": true }` is set in `config.json`. Checking PicCap's status starts a `luna-send`, and most TVs do not have it installed.
+
+When enabled, each telemetry round asks `org.webosbrew.piccap.service/status` for the capture state. Telemetry is not held up by the check: it carries the last known state as `piccap.isRunning`. The bridge publishes retained `ON` or `OFF` to `<prefix>/state/piccap/power` when the state changes and on each connect, and an empty payload when the service is not installed. `ON` or `OFF` on `<prefix>/command/piccap/power` starts or stops capture, subject to `allowControl`, and the state is read again after each command.
 
 

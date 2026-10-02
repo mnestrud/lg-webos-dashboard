@@ -12,6 +12,8 @@ var forceWaiters = [];
 var mqttClient = null;
 var stateTopic = '';
 var allowControl = false;
+// null forces the next publish, as after a (re)connect.
+var lastPayload = null;
 
 function current() {
   return { available: available, isRunning: isRunning };
@@ -90,17 +92,26 @@ function setPower(on, cb) {
   });
 }
 
-function publishState(state) {
+function publishState() {
   if (!mqttClient || !mqttClient.connected) return;
-  if (!state || typeof state.available !== 'boolean') state = current();
-  mqttClient.publish(stateTopic, state.available ? String(state.isRunning) : '', true);
+  var state = current();
+  var payload = state.available && typeof state.isRunning === 'boolean' ? (state.isRunning ? 'ON' : 'OFF') : '';
+  if (payload === lastPayload) return;
+  lastPayload = payload;
+  mqttClient.publish(stateTopic, payload, true);
 }
 
 function poll(cb) {
   getStatus(function (state) {
-    publishState(state);
+    publishState();
     if (cb) cb(state);
   }, true);
+}
+
+// The broker may have lost the retained state, so the next poll republishes it.
+function onConnect(cb) {
+  lastPayload = null;
+  poll(cb);
 }
 
 function addToTelemetry(stats) {
@@ -112,22 +123,27 @@ function addToTelemetry(stats) {
 function attachMqtt(opts) {
   opts = opts || {};
   mqttClient = opts.client || null;
-  stateTopic = (opts.prefix || 'lgtv') + '/state/piccap/isRunning';
+  stateTopic = (opts.prefix || 'lgtv') + '/state/piccap/power';
   allowControl = opts.allowControl === true;
 }
 
 function handleMqttCommand(action, value, cb) {
   if (action !== 'piccap/power') return false;
-  var power = String(value === undefined || value === null ? '' : value).toLowerCase();
-  if (power !== 'true' && power !== 'false') return true;
+  var power = String(value === undefined || value === null ? '' : value).toUpperCase();
+  if (power !== 'ON' && power !== 'OFF') {
+    var invalid = { ok: false, error: 'power must be ON or OFF' };
+    console.log('mqtt: PicCap command failed: ' + JSON.stringify(invalid));
+    if (cb) cb(invalid);
+    return true;
+  }
   if (!allowControl) {
     var disabled = { ok: false, error: msg('srv.controlsOff', 'controls disabled in config') };
     console.log('mqtt: PicCap command failed: ' + JSON.stringify(disabled));
     if (cb) cb(disabled);
     return true;
   }
-  setPower(power === 'true', function (result) {
-    publishState(result);
+  setPower(power === 'ON', function (result) {
+    publishState();
     if (!result || !result.ok) console.log('mqtt: PicCap command failed: ' + JSON.stringify(result));
     if (cb) cb(result);
   });
@@ -140,6 +156,7 @@ function init(opts) {
   return {
     attachMqtt: attachMqtt,
     poll: poll,
+    onConnect: onConnect,
     addToTelemetry: addToTelemetry,
     handleMqttCommand: handleMqttCommand
   };

@@ -33,6 +33,9 @@
     "model": "",
     "manufacturer": "LG"
   },
+  "piccap": {
+    "enabled": false
+  },
   "update": {
     "check": false,
     "intervalHours": 24,

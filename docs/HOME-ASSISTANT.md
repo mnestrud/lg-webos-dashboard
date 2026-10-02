@@ -149,6 +149,21 @@ The TV's own settings that the dashboard's Advanced, Game and Privacy tabs chang
 
 ---
 
+## PicCap
+
+PicCap is not published through discovery. With `"piccap": { "enabled": true }` in the TV's `config.json`, a switch in `configuration.yaml` starts and stops its capture, and with it the ambient lighting fed from it:
+
+```yaml
+mqtt:
+  switch:
+    - name: "PicCap"
+      unique_id: lg_tv_piccap
+      command_topic: "lgtv/command/piccap/power"
+      state_topic: "lgtv/state/piccap/power"
+```
+
+---
+
 ## Multiple TVs
 
 Each TV on the same broker needs a unique `topicPrefix` and `device.id` in its

@@ -2811,6 +2811,14 @@
   "text": "esta TV no ofrece el control",
   "from": "this TV does not offer the control"
  },
+ "srv.piccap.refused": {
+  "text": "PicCap rechazó la solicitud",
+  "from": "PicCap refused the request"
+ },
+ "srv.piccap.unavailable": {
+  "text": "PicCap no está disponible",
+  "from": "PicCap is not available"
+ },
  "srv.power.alwaysReady": {
   "text": "Always Ready",
   "from": "Always Ready"

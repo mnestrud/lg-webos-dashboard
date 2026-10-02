@@ -8,6 +8,7 @@ var calls = [];
 var publishes = [];
 var holdNextStatus = false;
 var heldStatus = null;
+var publishCount = 0;
 var client = {
   connected: true,
   publish: function (topic, payload, retain) {
@@ -50,8 +51,8 @@ function testMissingService(result) {
 function testInitialStatus(result) {
   assert.strictEqual(result.available, true, 'a valid status discovers PicCap');
   assert.strictEqual(result.isRunning, false);
-  assert.strictEqual(lastState().topic, 'room/tv/state/piccap/isRunning');
-  assert.strictEqual(lastState().payload, 'false');
+  assert.strictEqual(lastState().topic, 'room/tv/state/piccap/power');
+  assert.strictEqual(lastState().payload, 'OFF');
   assert.strictEqual(lastState().retain, true);
   var stats = {};
   piccap.addToTelemetry(stats);
@@ -62,7 +63,8 @@ function testInitialStatus(result) {
 
 function testChangedStatus(result) {
   assert.strictEqual(result.isRunning, true, 'poll reads changed capture state');
-  assert.strictEqual(lastState().payload, 'true');
+  assert.strictEqual(lastState().payload, 'ON');
+  publishCount = publishes.length;
   replies.push({ returnValue: false, errorText: 'temporary service error' });
   piccap.poll(testTransientError);
 }
@@ -70,6 +72,15 @@ function testChangedStatus(result) {
 function testTransientError(result) {
   assert.strictEqual(result.available, true, 'a transient error does not hide PicCap');
   assert.strictEqual(result.isRunning, true, 'a transient error keeps the last known state');
+  assert.strictEqual(publishes.length, publishCount, 'an unchanged state is not republished');
+  replies.push(status(true));
+  piccap.onConnect(testReconnected);
+}
+
+function testReconnected(result) {
+  assert.strictEqual(result.isRunning, true);
+  assert.strictEqual(publishes.length, publishCount + 1, 'a reconnect republishes the state');
+  assert.strictEqual(lastState().payload, 'ON');
   replies.push({ returnValue: false, errorText: 'Service does not exist' });
   piccap.poll(testRemovedService);
 }
@@ -87,35 +98,37 @@ function testReadyForStart(result) {
   assert.strictEqual(result.isRunning, false);
   replies.push({ returnValue: true });
   replies.push(status(true));
-  assert.strictEqual(piccap.handleMqttCommand('piccap/power', 'true', testStarted), true);
+  assert.strictEqual(piccap.handleMqttCommand('piccap/power', 'ON', testStarted), true);
   assert.strictEqual(piccap.handleMqttCommand('volume', '5'), false, 'other commands stay with tvweb');
   var count = calls.length;
-  assert.strictEqual(piccap.handleMqttCommand('piccap/power', 'invalid'), true);
+  var invalid = null;
+  assert.strictEqual(piccap.handleMqttCommand('piccap/power', 'true', function (r) { invalid = r; }), true);
   assert.strictEqual(calls.length, count, 'invalid payloads do not call Luna');
+  assert.strictEqual(invalid.ok, false, 'only ON and OFF are accepted');
 }
 
 function testStarted(result) {
   assert.strictEqual(result.ok, true);
   assert.strictEqual(result.isRunning, true, 'power command refreshes status');
-  assert.strictEqual(lastState().payload, 'true', 'power command publishes refreshed state');
+  assert.strictEqual(lastState().payload, 'ON', 'power command publishes refreshed state');
   assert.ok(calls.some(function (call) {
     return call.uri === 'org.webosbrew.piccap.service/start';
-  }), 'true calls PicCap start');
+  }), 'ON calls PicCap start');
   replies.push({ returnValue: true });
   replies.push(status(false));
-  piccap.handleMqttCommand('piccap/power', 'false', testStopped);
+  piccap.handleMqttCommand('piccap/power', 'off', testStopped);
 }
 
 function testStopped(result) {
   assert.strictEqual(result.ok, true);
   assert.strictEqual(result.isRunning, false);
-  assert.strictEqual(lastState().payload, 'false', 'stop publishes refreshed state');
+  assert.strictEqual(lastState().payload, 'OFF', 'stop publishes refreshed state');
   assert.ok(calls.some(function (call) {
     return call.uri === 'org.webosbrew.piccap.service/stop';
-  }), 'false calls PicCap stop');
+  }), 'OFF calls PicCap stop');
   piccap.attachMqtt({ client: client, prefix: 'room/tv', allowControl: false });
   var commandCount = calls.length;
-  piccap.handleMqttCommand('piccap/power', 'true', testControlsDisabled);
+  piccap.handleMqttCommand('piccap/power', 'ON', testControlsDisabled);
   assert.strictEqual(calls.length, commandCount, 'allowControl blocks MQTT power commands');
 }
 
