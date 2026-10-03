@@ -1,7 +1,7 @@
 /**
- * test/test-screensaver-switch.js - Custom screen savers held back where the
- * stock one is Flutter (webOS 10 and 11, #366), and the pause while sam
- * restarts to go back to it
+ * test/test-screensaver-switch.js - Custom screen savers and tile hiding held
+ * back where the stock screen saver is Flutter (webOS 10 and 11, #366), and the
+ * pause while sam restarts when switching back to LG's screen saver
  */
 
 var assert = require('assert');
@@ -14,10 +14,11 @@ var STOCK_TYPE_FILE = '/var/lib/tvweb/screensaver-stock-type';
 
 var restarts = [];
 var onUmount = function () {};
-// The module keeps its own reference to execFile, so this has to be in place
-// before it is required.
+// The modules keep their own reference to execFile, so this has to be in place
+// before they are required.
 child.execFile = function (file, args, opts, cb) {
   if (file === '/bin/systemctl') restarts.push(args.join(' '));
+  if (file === '/bin/sh' && /sam/.test(args.join(' '))) restarts.push(args.join(' '));
   if (file === '/bin/umount') onUmount();
   process.nextTick(function () { cb(null, '', ''); });
 };
@@ -40,6 +41,7 @@ var env = mockEnv.createMockEnv({
     },
     'com.webos.service.tvpower/power/getPowerState': { returnValue: true, state: 'Active' },
     'com.webos.applicationManager/getForegroundAppInfo': { returnValue: true, appId: 'com.webos.app.home' },
+    'com.webos.applicationManager/listLaunchPoints': { returnValue: true, launchPoints: [] },
     'com.webos.service.tvpower/power/turnOnScreenSaver': function () {
       ssRequests++;
       return { returnValue: true };
@@ -61,58 +63,76 @@ onUmount = function () {
 };
 
 var screensavers = require('../server/lib/screensavers');
+var apps = require('../server/lib/apps');
 
 console.log('Running test-screensaver-switch.js ...');
 
+var config = { port: 8080, allowControl: true };
 screensavers.init({
   luna: env.mockLuna,
   assetPath: function (qml) { return qml === 'screensavers/clock.qml' ? '/tmp/tvweb-test/clock.qml' : null; },
-  config: { port: 8080, allowControl: true },
+  config: config,
   mapPowerState: function (s) { return { raw: s }; },
   isScreenSaver: function () { return false; }
 });
+apps.init({ luna: env.mockLuna, config: config });
 
 var realNextTick = process.nextTick;
 
-realNextTick(function waitRevert() {
-  if (!screensavers.switching()) return realNextTick(waitRevert);
+realNextTick(function () {
+  // 1. One already mounted is left alone: undoing it would restart sam
+  assert.strictEqual(restarts.length, 0);
+  assert.strictEqual(screensavers.screensaverMode(), 'starfield');
+  console.log('  ✓ a custom screen saver in use is not undone at start');
 
-  // 1. Starting with one of ours mounted goes back to LG's and restarts sam
-  assert.strictEqual(restarts.length, 1);
-  assert.ok(/restart --no-block sam/.test(restarts[0]));
-  assert.strictEqual(screensavers.screensaverMode(), 'stock');
-  console.log('  ✓ a custom screen saver left mounted goes back to the LG default');
+  // 2. Custom ones are listed as unavailable and refused
+  var list = screensavers.screensaverList();
+  assert.strictEqual(list.held, true);
+  list.modes.forEach(function (m) {
+    assert.strictEqual(m.available, m.id === 'stock', m.id);
+  });
+  screensavers.setScreensaver('clock', 'dim', function (r) {
+    assert.strictEqual(r.ok, false);
+    assert.ok(/turned off on this TV/.test(r.error));
+    console.log('  ✓ custom screen savers are unavailable and refused');
 
-  // 2. Nothing may start or change a screen saver until sam is back
-  screensavers.trigger(function (t) {
-    assert.strictEqual(t.ok, false);
-    assert.ok(/still switching/.test(t.error));
-    assert.strictEqual(ssRequests, 0);
-    console.log('  ✓ start requests are refused while sam restarts');
+    // 3. Tile hiding cannot be turned on or used, and never restarts sam
+    apps.setTileHidingEnabled(true, function (t) {
+      assert.strictEqual(t.ok, false);
+      assert.ok(/turned off on this TV/.test(t.error));
+      apps.hideTile('com.webos.app.gallery', function (h) {
+        assert.strictEqual(h.ok, false);
+        assert.ok(/turned off on this TV/.test(h.error));
+        apps.restartSam(function (restarted) {
+          assert.strictEqual(restarted, false);
+          assert.strictEqual(restarts.length, 0);
+          console.log('  ✓ tile hiding is refused and sam is never restarted for it');
 
-    realNextTick(function waitClear() {
-      if (screensavers.switching()) return realNextTick(waitClear);
-      assert.ok(polls >= 3, 'cleared before sam came back');
+          // 4. Going back to LG's screen saver is still allowed, with the pause
+          screensavers.setScreensaver('stock', 'dim', function (s) {
+            assert.strictEqual(s.ok, true);
+            assert.strictEqual(restarts.length, 1);
+            assert.ok(/restart --no-block sam/.test(restarts[0]));
+            assert.strictEqual(s.switching, true);
+            screensavers.trigger(function (tr) {
+              assert.strictEqual(tr.ok, false);
+              assert.ok(/still switching/.test(tr.error));
+              assert.strictEqual(ssRequests, 0);
+              console.log('  ✓ switching back to the LG default restarts sam and holds requests meanwhile');
 
-      // 3. Custom ones are listed as unavailable and refused
-      var list = screensavers.screensaverList();
-      assert.strictEqual(list.held, true);
-      list.modes.forEach(function (m) {
-        assert.strictEqual(m.available, m.id === 'stock', m.id);
-      });
-      screensavers.setScreensaver('clock', 'dim', function (r) {
-        assert.strictEqual(r.ok, false);
-        assert.ok(/turned off on this TV/.test(r.error));
-        assert.strictEqual(restarts.length, 1);
-        console.log('  ✓ custom screen savers are unavailable and refused where the stock one is Flutter');
-
-        // 4. LG's own still starts once sam is back
-        screensavers.trigger(function (t) {
-          assert.strictEqual(t.ok, true);
-          assert.strictEqual(ssRequests, 1);
-          console.log('  ✓ the LG default starts once sam is back');
-          console.log('ALL test-screensaver-switch.js assertions passed!\n');
-          env.restore();
+              realNextTick(function waitClear() {
+                if (screensavers.switching()) return realNextTick(waitClear);
+                assert.ok(polls >= 3, 'cleared before sam came back');
+                screensavers.trigger(function (tr2) {
+                  assert.strictEqual(tr2.ok, true);
+                  assert.strictEqual(ssRequests, 1);
+                  console.log('  ✓ the LG default starts once sam is back');
+                  console.log('ALL test-screensaver-switch.js assertions passed!\n');
+                  env.restore();
+                });
+              });
+            });
+          });
         });
       });
     });

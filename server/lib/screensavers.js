@@ -27,7 +27,7 @@ var SWITCH_POLL_MS = 3000;
 var SWITCH_SETTLE_MS = 5000;
 var SWITCH_TIMEOUT_MS = 150000;
 var SWITCHING_ERROR = msg('srv.saver.switching', 'The TV is still switching screen savers. Try again in a minute.');
-var HELD_ERROR = msg('srv.saver.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged.');
+var HELD_ERROR = msg('srv.saver.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. One already in use stays until the TV is next fully restarted.');
 
 var SCREENSAVERS = {
   stock: {
@@ -122,11 +122,6 @@ function init(opts) {
   if (screensaverMode() === 'stock') {
     clearStagedScreensaver();
     rememberStockType();
-  } else if (held()) {
-    // Mounted by a version before this one held them back. The boot hook no
-    // longer mounts it, but a TV kept in standby may not cold boot for weeks.
-    console.log('screensaver: custom screen savers are held back on this TV - going back to the LG default');
-    setScreensaver('stock', 'dim', function () {});
   }
 }
 
@@ -154,10 +149,12 @@ function slowSwitch() {
   return false;
 }
 
-// Where the stock screen saver is not QML (Flutter on webOS 10 and 11), a custom
-// one has left the picture muted, HDMI-CEC and ARC dead and sound on the TV
-// speakers only, until a power cut (#366). Held back there until the cause is
-// found.
+// Where the stock screen saver is not QML (Flutter on webOS 10 and 11), custom
+// screen savers and tile hiding have each been followed by the picture muted,
+// HDMI-CEC and ARC dead and sound on the TV speakers only, until a power cut
+// (#366). Both make sam reread its manifests. Held back there until the cause
+// is found: the boot hook stops applying them, and nothing here restarts sam to
+// undo one already in use.
 function held() {
   return slowSwitch();
 }

@@ -29,19 +29,21 @@ if [ -f /var/lib/tvweb/adblock_enabled ] && [ -f /var/lib/tvweb/adblock_hosts ];
   mount --bind /var/lib/tvweb/adblock_hosts /etc/hosts 2>/dev/null || true
 fi
 
+# LG's screen saver ships as QML up to webOS 9 and as Flutter from webOS 10.
+# On the Flutter sets, the two things here that make sam reread its manifests -
+# a custom screen saver and tile hiding - have each been followed by the picture
+# muted, HDMI-CEC and ARC dead and sound on the TV speakers only, until a power
+# cut (#366). Both are held back there until the cause is found. Recorded for
+# the server, which cannot read the stock manifest while one of ours is mounted
+# over it.
+ssapp=/usr/palm/applications/com.webos.app.screensaver
+stock_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' "$ssapp/appinfo.json" 2>/dev/null)
+[ -n "$stock_type" ] && echo "$stock_type" > /var/lib/tvweb/screensaver-stock-type
+
 # Restore the chosen screen saver. The app directory is on the read-only
 # overlay, so the replacement is a bind mount and does not survive a reboot.
-#
-# Only where LG's screen saver is QML like ours. Where it ships as Flutter
-# (webOS 10 and 11) a custom one has left the picture muted, HDMI-CEC and ARC
-# dead and sound on the TV speakers only, until a power cut (#366), so it is
-# held back there. The stock type is recorded for the server, which cannot read
-# it while one of ours is mounted over it.
 if [ -f /var/lib/tvweb/screensaver/.tvweb-screensaver ]; then
-  ssapp=/usr/palm/applications/com.webos.app.screensaver
-  stock_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' "$ssapp/appinfo.json" 2>/dev/null)
   staged_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' /var/lib/tvweb/screensaver/appinfo.json 2>/dev/null)
-  [ -n "$stock_type" ] && echo "$stock_type" > /var/lib/tvweb/screensaver-stock-type
   if [ -n "$stock_type" ] && [ "$stock_type" = "$staged_type" ]; then
     mount --bind /var/lib/tvweb/screensaver "$ssapp" 2>/dev/null || true
   else
@@ -52,7 +54,9 @@ fi
 # Restore hidden built-in app overrides if tile hiding is enabled. Not on a
 # Homebrew Channel install, which does not offer it: restarting the app
 # manager mid-boot is a risk that store asks its apps not to take.
-if [ ! -f /var/lib/tvweb/.from-homebrew-channel ] && [ -f /var/lib/tvweb/tile_hiding_enabled ] && [ "$(cat /var/lib/tvweb/tile_hiding_enabled 2>/dev/null)" = "1" ] && [ -f /var/lib/tvweb/hidden_apps ]; then
+if [ -n "$stock_type" ] && [ "$stock_type" != "qml" ] && [ "$(cat /var/lib/tvweb/tile_hiding_enabled 2>/dev/null)" = "1" ]; then
+  echo "$(date): tile hiding held back (stock screen saver $stock_type)"
+elif [ ! -f /var/lib/tvweb/.from-homebrew-channel ] && [ -f /var/lib/tvweb/tile_hiding_enabled ] && [ "$(cat /var/lib/tvweb/tile_hiding_enabled 2>/dev/null)" = "1" ] && [ -f /var/lib/tvweb/hidden_apps ]; then
   mounted=0
   while read -r app; do
     [ -z "$app" ] && continue

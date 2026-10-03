@@ -327,6 +327,10 @@
   "text": "No se pudo actualizar la ocultación de mosaicos: {error}",
   "from": "Could not update tile hiding: {error}"
  },
+ "apps.tiles.held": {
+  "text": "Ocultar aplicaciones del sistema está desactivado en esta TV por ahora. En webOS 10 y posteriores puede dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV. Las aplicaciones ya ocultas vuelven a aparecer tras el próximo reinicio completo de la TV.",
+  "from": "Hiding system apps is turned off on this TV for now. On webOS 10 and later it can leave the picture, the sound and HDMI control off until the TV is unplugged. Apps already hidden come back after the TV is next fully restarted."
+ },
  "apps.tiles.hidden": {
   "text": "{n} ocultos",
   "from": "{n} hidden"
@@ -2091,6 +2095,10 @@
   "text": "la TV no quiso quitarla",
   "from": "the TV would not remove it"
  },
+ "srv.apps.tilesHeld": {
+  "text": "Ocultar aplicaciones del sistema está desactivado en esta TV por ahora. En webOS 10 y posteriores puede dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV. Las aplicaciones ya ocultas vuelven a aparecer tras el próximo reinicio completo de la TV.",
+  "from": "Hiding system apps is turned off on this TV for now. On webOS 10 and later it can leave the picture, the sound and HDMI control off until the TV is unplugged. Apps already hidden come back after the TV is next fully restarted."
+ },
  "srv.arOff.badHour": {
   "text": "el inicio debe ser una hora de 0 a 23",
   "from": "the start must be an hour from 0 to 23"
@@ -2956,8 +2964,8 @@
   "from": "Bursts of colour on black, a few seconds apart."
  },
  "srv.saver.held": {
-  "text": "Los salvapantallas personalizados están desactivados en esta TV por ahora. En webOS 10 y posteriores pueden dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV.",
-  "from": "Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged."
+  "text": "Los salvapantallas personalizados están desactivados en esta TV por ahora. En webOS 10 y posteriores pueden dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV. Uno que ya esté en uso se mantiene hasta el próximo reinicio completo de la TV.",
+  "from": "Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. One already in use stays until the TV is next fully restarted."
  },
  "srv.saver.noRemote": {
   "text": "no se pudo alcanzar el dispositivo de entrada del mando",
@@ -3160,8 +3168,8 @@
   "from": "Note: if a firmware update is applied, the screen saver will be restored to the LG default."
  },
  "ss.held": {
-  "text": "Los salvapantallas personalizados están desactivados en esta TV por ahora. En webOS 10 y posteriores pueden dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV.",
-  "from": "Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged."
+  "text": "Los salvapantallas personalizados están desactivados en esta TV por ahora. En webOS 10 y posteriores pueden dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV. Uno que ya esté en uso se mantiene hasta el próximo reinicio completo de la TV.",
+  "from": "Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. One already in use stays until the TV is next fully restarted."
  },
  "ss.inUse": {
   "text": "En uso",

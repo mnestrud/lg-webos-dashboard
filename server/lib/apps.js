@@ -14,6 +14,7 @@ var msg = require('./say').msg;
 var fs = require('fs');
 var path = require('path');
 var execFile = require('child_process').execFile;
+var screensavers = require('./screensavers');
 
 var OVERRIDE_DIR = '/var/lib/tvweb/appinfo-overrides';
 var HIDDEN_APPS_FILE = '/var/lib/tvweb/hidden_apps';
@@ -22,6 +23,7 @@ var HIDDEN_APPS_FILE = '/var/lib/tvweb/hidden_apps';
 var PAGE_TITLES_FILE = '/var/lib/tvweb/saved_page_titles.json';
 var BROWSER_ID = 'com.webos.app.browser';
 var TILE_HIDING_FLAG_FILE = '/var/lib/tvweb/tile_hiding_enabled';
+var TILES_HELD_ERROR = msg('srv.apps.tilesHeld', 'Hiding system apps is turned off on this TV for now. On webOS 10 and later it can leave the picture, the sound and HDMI control off until the TV is unplugged. Apps already hidden come back after the TV is next fully restarted.');
 
 var APP_BASES = [
   '/media/system/apps/usr/palm/applications',
@@ -198,6 +200,10 @@ function setTileHidingEnabled(enabled, cb) {
     return;
   }
   enabled = !!enabled;
+  if (enabled && screensavers.held()) {
+    if (cb) cb({ ok: false, error: TILES_HELD_ERROR });
+    return;
+  }
   try {
     mkdirp(path.dirname(TILE_HIDING_FLAG_FILE));
     fs.writeFileSync(TILE_HIDING_FLAG_FILE, enabled ? '1\n' : '0\n', 'utf8');
@@ -261,6 +267,13 @@ function setTileHidingEnabled(enabled, cb) {
  * it is automatically relaunched so the user is never stranded on the Home screen.
  */
 function restartSam(cb) {
+  // Where tile hiding is held back, turning it off still unmounts the overrides
+  // and the tiles come back at the next full restart.
+  if (screensavers.held()) {
+    console.log('apps: sam not restarted - tile hiding is held back on this TV (#366)');
+    if (cb) cb(false);
+    return;
+  }
   function executeRestart(savedAppId) {
     var cmd = 'if command -v systemctl >/dev/null 2>&1; then ' +
               'killall -9 LunaExecutable >/dev/null 2>&1 || true; ' +
@@ -571,6 +584,7 @@ function hideTile(appId, cb) {
   if (isProtected(appId)) {
     return cb({ ok: false, error: msg('srv.apps.protectedHide', 'Protected core system app cannot be hidden') });
   }
+  if (screensavers.held()) return cb({ ok: false, error: TILES_HELD_ERROR });
 
   var tgts = findAllAppinfoPaths(appId);
   if (tgts.length === 0) {
