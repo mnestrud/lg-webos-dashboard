@@ -28,7 +28,7 @@ Use it for remote control, app management and removal, OLED panel care, privacy 
 * **webOS**: 3.4 through 26 confirmed; tested across 2016–2025 models. Other versions likely work as well
 * **Panels**: OLED (full panel wear telemetry and burn-in controls) and LCD (core dashboard, controls, and telemetry; OLED Care tab hides automatically)
 * **Access**: Rooted via [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel). Telnet or SSH. No external dependencies or internet access needed on the TV
-* **Tested hardware**: 24 models verified so far (UH6030, UH610V, B7, B8, C8, C9, CX, C1, UP81, QNED82, C2, C3, B4, G3, C4, G4, UT81, C5, CS). Other rooted models should work; [see full table](#tested-tvs)
+* **Tested hardware**: 26 models verified so far (UH6030, UH610V, B7, B8, C8, C9, CX, C1, UP81, QNED82, C2, C3, B4, G3, C4, G4, UT81, C5, G5, CS, LX3). Other rooted models should work; [see full table](#tested-tvs)
 
 [Quick start](#quick-start) • [What it's for](#what-its-for) • [Screenshots](#screenshots) • [Features](#features) • [Installation](#installation) • [Tested TVs](#tested-tvs) • [Home Assistant](#home-assistant--mqtt) • [Managing the server](#managing-the-server) • [Security](#security)
 
@@ -348,7 +348,9 @@ Tested across the following TVs so far. The Luna service names and `/proc/lg` pa
 | OLED77C4PSA | 25 (10.3.1)  | 33.31.68 | OLED  | Rooted with Dangbro; resolution reported stuck at 1920x1081    |
 | OLED48C55LA | 25 (10.3.1)  | 33.31.68 | OLED  | Installed over telnet; in-app update to 0.37.2 confirmed       |
 | OLED77C57LA | 25 (10.3.1)  | 33.31.68 | OLED  | MQTT, privacy, screen saver and web dashboard confirmed        |
+| 42LX3Q6LA   | —            | 33.31.68 | OLED  | Flex; model number has no OLED prefix                          |
 | OLED65G36LA | 26 (11.2.0)  | 43.21.71 | OLED  | Rooted with DualBro; privacy and app installs confirmed        |
+| OLED83G5WUA | 26 (11.2.0)  | 43.21.71 | OLED  | Rooted with DualBro; runs with internet access blocked         |
 
 **Tested on another model?** Please [open an issue](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/new) with the TV model, webOS version, and the contents of `/var/lib/tvweb/tvweb.log` — whether everything worked or something broke — and we will add a row.
 
@@ -462,6 +464,22 @@ Edit those in `config.json` and redeploy, or edit `/var/lib/tvweb/config.json` o
 > Give the TV its own MQTT user with a restricted topic ACL rather than reusing the main Home Assistant credentials. See [docs/SECURITY.md](docs/SECURITY.md).
 
 </details>
+
+### Optional PicCap control
+
+PicCap is an app capturing the TV's screen and sending it to a Hyperion client that transforms it into an ambient-light system. PicCap MQTT control is off by default. It can be enabled via config in `/var/lib/tvweb/config.json`
+
+```
+"piccap": {
+  "enabled": true,
+  "pollIntervalMs": 30000
+}
+``` 
+
+Polling interval is optional, and defaults to 30 seconds. 
+The retained state topic `<topicPrefix>/state/piccap/power` carries `ON` or `OFF`; 
+the command topic `<topicPrefix>/command/piccap/power` accepts `ON` to start PicCap capturing and `OFF` to stop it. 
+Commands require `allowControl` to be `true`. Telemetry includes boolean `piccap.power` when PicCap is available. 
 
 ### Using MQTT without Home Assistant
 
