@@ -88,6 +88,8 @@ realNextTick(function () {
   // 2. Custom ones are listed as unavailable and refused
   var list = screensavers.screensaverList();
   assert.strictEqual(list.held, true);
+  // The section stays while one of ours is in use, so it can be switched back.
+  assert.strictEqual(list.available, true);
   list.modes.forEach(function (m) {
     assert.strictEqual(m.available, m.id === 'stock', m.id);
   });
@@ -111,6 +113,8 @@ realNextTick(function () {
           // 4. Going back to LG's screen saver is still allowed, with the pause
           screensavers.setScreensaver('stock', 'dim', function (s) {
             assert.strictEqual(s.ok, true);
+            // Back on LG's, there is nothing left to choose: the tab goes.
+            assert.strictEqual(screensavers.screensaverList().available, false);
             assert.strictEqual(restarts.length, 1);
             assert.ok(/restart --no-block sam/.test(restarts[0]));
             assert.strictEqual(s.switching, true);

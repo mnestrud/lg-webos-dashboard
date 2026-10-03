@@ -816,7 +816,7 @@ footer{margin-top:38px;font-size:12px;letter-spacing:.10em;text-transform:upperc
   <button type="button" role="tab" data-tab="oledcare" id="tab-btn-oledcare" hidden data-t="tab.oledCare">OLED Care</button>
   <button type="button" role="tab" data-tab="game" id="tab-btn-game" hidden data-t="tab.game">Game</button>
   <button type="button" role="tab" data-tab="servicemenu" id="tab-btn-servicemenu" hidden data-t="tab.serviceMenu">Service menu</button>
-  <button type="button" role="tab" data-tab="screensaver" data-t="tab.screensaver">Screensaver</button>
+  <button type="button" role="tab" data-tab="screensaver" id="tab-btn-screensaver" data-t="tab.screensaver">Screensaver</button>
   <button type="button" role="tab" data-tab="advanced" data-t="tab.advanced">Advanced</button>
   <button type="button" role="tab" data-tab="mqtt" translate="no">MQTT</button>
   <button type="button" role="tab" data-tab="server" data-t="tab.server">Server</button>
@@ -4161,6 +4161,7 @@ const TABS = {
   advanced:    'advpane'
 };
 let activeTab = null;
+let ssHeld = false;   // see checkScreensaverTab
 // null until the first telemetry says either way.
 let isOledSet = null;
 
@@ -4179,6 +4180,7 @@ function showTab(name) {
    * /?tab=oledcare off an OLED set every time.
    */
   if (name === 'oledcare' && isOledSet === false) name = 'control';
+  if (name === 'screensaver' && ssHeld) name = 'control';
   activeTab = name;
   for (const [key, id] of Object.entries(TABS)) {
     const el = q(id);
@@ -4228,6 +4230,16 @@ if (tabsNav) {
 }
 // Reveals the Game tab on TVs with LG's Game Optimizer.
 loadGame();
+
+/* Where custom screen savers are held back (#366) the tab has nothing to offer
+   once LG's is in use. Shown until the server says so, as every other TV has it. */
+(async function checkScreensaverTab() {
+  let d;
+  try { d = await (await fetch(api('/api/screensaver'), { cache: 'no-store' })).json(); } catch (e) { return; }
+  ssHeld = !!(d && d.available === false);
+  q('tab-btn-screensaver').hidden = ssHeld;
+  if (ssHeld && activeTab === 'screensaver') showTab('control');
+})();
 
 /*
  * Each arrow shows only while the strip has more that way. Tabs appear after
@@ -4523,8 +4535,8 @@ async function loadScreensavers() {
   q('ss-note').textContent = !d.writable
     ? t('ss.controlsOff', 'Controls are disabled in config.json, so the screen saver cannot be changed from here.')
     : ssSwitching ? SS_SWITCHING
+    : d.held ? t('ss.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. Switch to LG\'s screen saver to stop using this one now; otherwise it goes when the TV is next fully restarted.')
     : d.heldOverridden ? t('common.heldOverridden', 'Turned back on with allowOnWebos10 in config.json. On webOS 10 and later custom screen savers and tile hiding have left the picture, the sound and HDMI control off until the TV was unplugged (#366).')
-    : d.held ? t('ss.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. One already in use stays until the TV is next fully restarted.')
     : (d.slowSwitch ? t('ss.slowSwitch', 'On this TV, switching to or from the LG default takes about a minute, and the screen goes dark while it does.') + ' ' : '')
       + t('ss.firmwareNote', 'Note: if a firmware update is applied, the screen saver will be restored to the LG default.');
   ssWritable = d.writable;

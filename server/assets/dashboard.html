@@ -222,7 +222,7 @@ var TABS = [
   { key: 'apps',    label: t('tab.apps', 'Apps'),         url: '/api/apps',        build: appsRows },
   { key: 'oled',    label: t('tab.oledCare', 'OLED Care'),    url: '/api/oledcare',    build: oledRows },
   { key: 'game',    label: t('tab.game', 'Game'),         url: '/api/game',        build: gameRows, optional: true },
-  { key: 'saver',   label: t('tv.tab.screenSaver', 'Screen Saver'), url: '/api/screensaver', build: saverRows },
+  { key: 'saver',   label: t('tv.tab.screenSaver', 'Screen Saver'), url: '/api/screensaver', build: saverRows, optional: true },
   { key: 'privacy', label: t('tab.privacy', 'Privacy'),      url: '/api/privacy',     build: privacyRows },
   { key: 'service', label: t('tv.tab.serviceMenu', 'Service Menu'), url: '/api/servicemenu', build: svcRows },
   { key: 'options', label: t('tv.tab.system', 'System'),       url: '/api/stats?with=settings', build: optionRows, poll: 5000 },
@@ -554,9 +554,9 @@ function saverRows(d) {
   }
   if (d.held) {
     r.push({ label: t('tv.saver.held', 'Custom screen savers'), value: t('common.off', 'Off'), cls: 'off',
-             hint: t('ss.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. One already in use stays until the TV is next fully restarted.') });
+             hint: t('ss.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. Switch to LG\'s screen saver to stop using this one now; otherwise it goes when the TV is next fully restarted.') });
   }
-  d.modes.filter(function (m) { return m.available; }).forEach(function (m) {
+  d.modes.filter(function (m) { return m.available || (d.held && m.active); }).forEach(function (m) {
     r.push({ label: m.label, value: m.active ? t('ss.inUse', 'In use') : '', cls: m.active ? 'on' : '',
              act: d.writable && !busy ? 'saver' : null, key: m.id,
              press: m.active ? t('tv.saver.alreadyInUse', 'Already in use')
@@ -1701,7 +1701,8 @@ if (selMatch) {
 openTab(initTab, initialSel !== null);
 
 /* A section the TV may not have is dropped once its endpoint says so, as the
-   browser dashboard hides its tab: a B8 has no Game Optimizer. */
+   browser dashboard hides its tab: a B8 has no Game Optimizer, and a TV
+   holding custom screen savers back (#366) has none to offer. */
 TABS.forEach(function (section) {
   if (!section.optional) return;
   fetch(section.url, { cache: 'no-store' })

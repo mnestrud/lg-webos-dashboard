@@ -3180,8 +3180,8 @@
   "from": "Note: if a firmware update is applied, the screen saver will be restored to the LG default."
  },
  "ss.held": {
-  "text": "Los salvapantallas personalizados están desactivados en esta TV por ahora. En webOS 10 y posteriores pueden dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV. Uno que ya esté en uso se mantiene hasta el próximo reinicio completo de la TV.",
-  "from": "Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. One already in use stays until the TV is next fully restarted."
+  "text": "Los salvapantallas personalizados están desactivados en esta TV por ahora. En webOS 10 y posteriores pueden dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV. Cambia al salvapantallas de LG para dejar de usar este ahora; si no, desaparece tras el próximo reinicio completo de la TV.",
+  "from": "Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. Switch to LG's screen saver to stop using this one now; otherwise it goes when the TV is next fully restarted."
  },
  "ss.inUse": {
   "text": "En uso",

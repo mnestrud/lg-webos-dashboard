@@ -236,6 +236,10 @@ function screensaverList() {
     modes: out,
     writable: !!(configObj && configObj.allowControl),
     slowSwitch: slowSwitch(),
+    // Held back, there is nothing to choose once LG's is in use, so both
+    // dashboards drop the tab; while one of ours still is, it stays so the
+    // owner can switch back without waiting for a full restart.
+    available: !held() || cur !== 'stock',
     held: held(),
     heldOverridden: heldOverridden(),
     switching: switching()
