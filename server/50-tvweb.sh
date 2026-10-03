@@ -33,28 +33,45 @@ fi
 # On the Flutter sets, the two things here that make sam reread its manifests -
 # a custom screen saver and tile hiding - have each been followed by the picture
 # muted, HDMI-CEC and ARC dead and sound on the TV speakers only, until a power
-# cut (#366). Both are held back there until the cause is found. Recorded for
-# the server, which cannot read the stock manifest while one of ours is mounted
-# over it.
+# cut (#366). Both are held back there until the cause is found, unless
+# config.json has "allowOnWebos10": true. The type is recorded for the server,
+# which cannot read the stock manifest while one of ours is mounted over it.
 ssapp=/usr/palm/applications/com.webos.app.screensaver
 stock_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' "$ssapp/appinfo.json" 2>/dev/null)
 [ -n "$stock_type" ] && echo "$stock_type" > /var/lib/tvweb/screensaver-stock-type
+held=0
+if [ -n "$stock_type" ] && [ "$stock_type" != "qml" ]; then
+  if grep -q '"allowOnWebos10"[[:space:]]*:[[:space:]]*true' /var/lib/tvweb/config.json 2>/dev/null; then
+    echo "$(date): allowOnWebos10 set - custom screen saver and tile hiding not held back"
+  else
+    held=1
+  fi
+fi
 
 # Restore the chosen screen saver. The app directory is on the read-only
 # overlay, so the replacement is a bind mount and does not survive a reboot.
+#
+# sam.service is up well before this hook runs and reads each appinfo.json only
+# once, so where the replacement changes the app's type it has to read the file
+# again or the launch goes to the wrong runner and nothing draws.
 if [ -f /var/lib/tvweb/screensaver/.tvweb-screensaver ]; then
   staged_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' /var/lib/tvweb/screensaver/appinfo.json 2>/dev/null)
-  if [ -n "$stock_type" ] && [ "$stock_type" = "$staged_type" ]; then
-    mount --bind /var/lib/tvweb/screensaver "$ssapp" 2>/dev/null || true
+  if [ "$held" -eq 1 ]; then
+    echo "$(date): custom screen saver held back (stock $stock_type, ours ${staged_type:-unknown})"
   else
-    echo "$(date): custom screen saver held back (stock ${stock_type:-unknown}, ours ${staged_type:-unknown})"
+    mount --bind /var/lib/tvweb/screensaver "$ssapp" 2>/dev/null || true
+    # --no-block: stopping sam waits on every app in its cgroup, which is most
+    # of a minute, and no hook may hold up boot for that.
+    if [ -n "$stock_type" ] && [ -n "$staged_type" ] && [ "$stock_type" != "$staged_type" ]; then
+      systemctl restart --no-block sam >/dev/null 2>&1 || true
+    fi
   fi
 fi
 
 # Restore hidden built-in app overrides if tile hiding is enabled. Not on a
 # Homebrew Channel install, which does not offer it: restarting the app
 # manager mid-boot is a risk that store asks its apps not to take.
-if [ -n "$stock_type" ] && [ "$stock_type" != "qml" ] && [ "$(cat /var/lib/tvweb/tile_hiding_enabled 2>/dev/null)" = "1" ]; then
+if [ "$held" -eq 1 ] && [ "$(cat /var/lib/tvweb/tile_hiding_enabled 2>/dev/null)" = "1" ]; then
   echo "$(date): tile hiding held back (stock screen saver $stock_type)"
 elif [ ! -f /var/lib/tvweb/.from-homebrew-channel ] && [ -f /var/lib/tvweb/tile_hiding_enabled ] && [ "$(cat /var/lib/tvweb/tile_hiding_enabled 2>/dev/null)" = "1" ] && [ -f /var/lib/tvweb/hidden_apps ]; then
   mounted=0

@@ -30,7 +30,7 @@ Use it for remote control, app management and removal, OLED panel care, privacy 
 * **Access**: Rooted via [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel). Telnet or SSH. No external dependencies or internet access needed on the TV
 * **Tested hardware**: 25 models verified so far (UH6030, UH610V, B7, B8, C8, C9, CX, C1, UP81, QNED82, C2, C3, B4, G3, C4, G4, UT81, C5, G5, CS). Other rooted models should work; [see full table](#tested-tvs)
 
-[Quick start](#quick-start) • [What it's for](#what-its-for) • [Screenshots](#screenshots) • [Features](#features) • [Installation](#installation) • [Tested TVs](#tested-tvs) • [Home Assistant](#home-assistant--mqtt) • [Managing the server](#managing-the-server) • [Security](#security)
+[Quick start](#quick-start) • [What it's for](#what-its-for) • [Screenshots](#screenshots) • [Features](#features) • [Installation](#installation) • [Tested TVs](#tested-tvs) • [Known issues](#known-issues) • [Home Assistant](#home-assistant--mqtt) • [Managing the server](#managing-the-server) • [Security](#security)
 
 ---
 
@@ -156,7 +156,7 @@ The **Apps** tab, `/?tab=apps`, offers three different ways to manage software o
 
 * **Uninstall applications:** Store downloads and sideloaded packages with version and vendor details, and a one-click uninstall action to permanently delete apps and free up internal eMMC flash storage.
 * **Turn off background services:** Safely disable unnecessary background services and daemons that consume RAM and CPU cycles (such as USB camera watcher, Connected Car listeners, and browser preloading). Only services actually present on the TV are displayed, and disabled states are persisted across reboots.
-* **Hide home screen system apps:** Hide non-removable LG system apps (Gallery, Music, Sports, Always Ready, Camera, User Guide, Device Connector, Alexa, Google Assistant, etc.) from the home launcher ribbon. Operates non-destructively via reversible `appinfo.json` bind-mounts. Includes a master toggle to instantly return to stock behavior. Not available on webOS 10 and later for now ([#366](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/366)); apps already hidden there come back after the next full restart.
+* **Hide home screen system apps:** Hide non-removable LG system apps (Gallery, Music, Sports, Always Ready, Camera, User Guide, Device Connector, Alexa, Google Assistant, etc.) from the home launcher ribbon. Operates non-destructively via reversible `appinfo.json` bind-mounts. Includes a master toggle to instantly return to stock behavior. Not available on webOS 10 and later for now; see [Known issues](#known-issues).
 * **Strict system safeguards:** Core TV services (`Live TV`, `Settings`, `Launcher`, input switchers, and the dashboard itself) are strictly protected and can never be hidden or uninstalled.
 * **Available on TV and Web:** Manage apps from any browser or directly on the TV using the remote control in the on-TV dashboard app.
 
@@ -250,7 +250,7 @@ Each mode offers dim and bright variants, and visual elements continuously drift
 
 A firmware update restores the LG default.
 
-Not available on webOS 10 and later for now, where LG's screen saver is a Flutter app. There a custom one, and tile hiding, have each been followed by the picture, sound and HDMI control going off until the TV was unplugged ([#366](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/366)). One already in use stays until the TV is next fully restarted.
+Not available on webOS 10 and later for now; see [Known issues](#known-issues).
 
 <p align="center">
   <a href="docs/screenshots/screensaver.png"><img src="docs/screenshots/screensaver.png" alt="Screensaver tab: LG default, Clock, Starfield, Fireworks, Bokeh and Panel vitals, with brightness and a start button beside them" width="700"></a>
@@ -355,6 +355,20 @@ Tested across the following TVs so far. The Luna service names and `/proc/lg` pa
 
 **Tested on another model?** Please [open an issue](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/new) with the TV model, webOS version, and the contents of `/var/lib/tvweb/tvweb.log` — whether everything worked or something broke — and we will add a row.
 
+### Known issues
+
+**Black picture and no sound on webOS 10 and later ([#366](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/366)).** On webOS 10 and 11, after a custom screen saver or tile hiding has been used, apps and HDMI inputs can show a black picture with no sound. HDMI-CEC stops working and sound plays only through the TV's own speakers. Standby does not clear it; unplugging the TV does. The cause is not yet known.
+
+Both features are turned off on these TVs. One already in use stays until the TV is next fully restarted, then the TV goes back to stock. They can be turned back on, for example to help test a fix, by adding `"allowOnWebos10": true` to `/var/lib/tvweb/config.json` and fully restarting the TV. The dashboard then notes that they were turned back on.
+
+If it happens, please add to [#366](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/366) rather than opening a new issue, with the output of these, run before restarting the TV:
+
+```sh
+luna-send -n 1 -f luna://com.webos.service.tvpower/power/getPowerState '{}'
+luna-send -n 1 -f luna://com.webos.service.videooutput/getStatus '{}'
+cat /var/lib/webosbrew/tvweb-boot.log
+```
+
 ### 1. Get the files
 
 > [!TIP]
@@ -455,7 +469,7 @@ To replace an existing config, edit it through the dashboard or remove `/var/lib
 
 The dashboard can change the broker, credentials, topic prefix and device identity — the things that decide *where* telemetry goes.
 
-`port`, `host`, `allowControl`, `allowPower` and `token` are file-only. They decide *who can reach the server at all*, and a web UI able to widen its own exposure would defeat the point of setting them.
+`port`, `host`, `allowControl`, `allowPower`, `token` and `allowOnWebos10` are file-only. They decide *who can reach the server at all*, and a web UI able to widen its own exposure would defeat the point of setting them.
 
 Edit those in `config.json` and redeploy, or edit `/var/lib/tvweb/config.json` on the TV and restart.
 

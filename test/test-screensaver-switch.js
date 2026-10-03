@@ -127,6 +127,17 @@ realNextTick(function () {
                   assert.strictEqual(tr2.ok, true);
                   assert.strictEqual(ssRequests, 1);
                   console.log('  ✓ the LG default starts once sam is back');
+
+                  // 5. allowOnWebos10 in config.json turns them back on, flagged
+                  config.allowOnWebos10 = true;
+                  assert.strictEqual(screensavers.held(), false);
+                  var over = screensavers.screensaverList();
+                  assert.strictEqual(over.held, false);
+                  assert.strictEqual(over.heldOverridden, true);
+                  over.modes.forEach(function (m) {
+                    assert.strictEqual(m.available, m.id === 'stock' || m.id === 'clock', m.id);
+                  });
+                  console.log('  ✓ allowOnWebos10 turns them back on and is reported');
                   console.log('ALL test-screensaver-switch.js assertions passed!\n');
                   env.restore();
                 });

@@ -154,9 +154,19 @@ function slowSwitch() {
 // HDMI-CEC and ARC dead and sound on the TV speakers only, until a power cut
 // (#366). Both make sam reread its manifests. Held back there until the cause
 // is found: the boot hook stops applying them, and nothing here restarts sam to
-// undo one already in use.
+// undo one already in use. "allowOnWebos10": true in config.json, file-only,
+// turns them back on.
 function held() {
-  return slowSwitch();
+  return slowSwitch() && !allowedAnyway();
+}
+
+function allowedAnyway() {
+  return !!(configObj && configObj.allowOnWebos10);
+}
+
+// Held back but turned back on, so the dashboards can say so.
+function heldOverridden() {
+  return slowSwitch() && allowedAnyway();
 }
 
 function switching() {
@@ -227,6 +237,7 @@ function screensaverList() {
     writable: !!(configObj && configObj.allowControl),
     slowSwitch: slowSwitch(),
     held: held(),
+    heldOverridden: heldOverridden(),
     switching: switching()
   };
 }
@@ -429,6 +440,7 @@ module.exports = {
   screensaverList: screensaverList,
   switching: switching,
   held: held,
+  heldOverridden: heldOverridden,
   setScreensaver: setScreensaver,
   restageScreensaver: restageScreensaver,
   trigger: trigger

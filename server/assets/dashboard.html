@@ -548,6 +548,10 @@ function saverRows(d) {
   var slow = d.slowSwitch && d.current === 'stock' ? function (m) { return m.id !== 'stock'; }
            : d.slowSwitch ? function (m) { return m.id === 'stock'; }
            : function () { return false; };
+  if (d.heldOverridden) {
+    r.push({ label: t('tv.saver.held', 'Custom screen savers'), value: t('common.on', 'On'), cls: 'on',
+             hint: t('common.heldOverridden', 'Turned back on with allowOnWebos10 in config.json. On webOS 10 and later custom screen savers and tile hiding have left the picture, the sound and HDMI control off until the TV was unplugged (#366).') });
+  }
   if (d.held) {
     r.push({ label: t('tv.saver.held', 'Custom screen savers'), value: t('common.off', 'Off'), cls: 'off',
              hint: t('ss.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged. One already in use stays until the TV is next fully restarted.') });
@@ -623,7 +627,8 @@ function appsRows(d) {
       act: tilesHeld && !tileHidingEnabled ? null : 'tileHiding',
       on: tileHidingEnabled,
       press: tileHidingEnabled ? t('tv.apps.tiles.disable', 'Press OK to disable tile hiding') : t('tv.apps.tiles.enable', 'Press OK to enable tile hiding'),
-      hint: tilesHeld ? t('apps.tiles.held', 'Hiding system apps is turned off on this TV for now. On webOS 10 and later it can leave the picture, the sound and HDMI control off until the TV is unplugged. Apps already hidden come back after the TV is next fully restarted.')
+      hint: d.tileHidingOverridden ? t('common.heldOverridden', 'Turned back on with allowOnWebos10 in config.json. On webOS 10 and later custom screen savers and tile hiding have left the picture, the sound and HDMI control off until the TV was unplugged (#366).')
+        : tilesHeld ? t('apps.tiles.held', 'Hiding system apps is turned off on this TV for now. On webOS 10 and later it can leave the picture, the sound and HDMI control off until the TV is unplugged. Apps already hidden come back after the TV is next fully restarted.')
         : tileHidingEnabled
         ? t('tv.apps.tiles.on.hint', 'When enabled: On each cold boot of your TV, this can cause a brief 1-second blank screen or input refresh before returning to your active HDMI source.')
         : t('tv.apps.tiles.off.hint', 'Stock behavior active. Press OK to enable system app hiding.')
