@@ -250,6 +250,8 @@ Each mode offers dim and bright variants, and visual elements continuously drift
 
 A firmware update restores the LG default.
 
+Not available on webOS 10 and later for now, where LG's screen saver is a Flutter app. There a custom one has left the picture, sound and HDMI control off until the TV was unplugged ([#366](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/366)). A TV that already had one goes back to the LG default.
+
 <p align="center">
   <a href="docs/screenshots/screensaver.png"><img src="docs/screenshots/screensaver.png" alt="Screensaver tab: LG default, Clock, Starfield, Fireworks, Bokeh and Panel vitals, with brightness and a start button beside them" width="700"></a>
   <br>

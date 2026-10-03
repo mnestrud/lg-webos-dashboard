@@ -27,6 +27,7 @@ var SWITCH_POLL_MS = 3000;
 var SWITCH_SETTLE_MS = 5000;
 var SWITCH_TIMEOUT_MS = 150000;
 var SWITCHING_ERROR = msg('srv.saver.switching', 'The TV is still switching screen savers. Try again in a minute.');
+var HELD_ERROR = msg('srv.saver.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged.');
 
 var SCREENSAVERS = {
   stock: {
@@ -121,6 +122,11 @@ function init(opts) {
   if (screensaverMode() === 'stock') {
     clearStagedScreensaver();
     rememberStockType();
+  } else if (held()) {
+    // Mounted by a version before this one held them back. The boot hook no
+    // longer mounts it, but a TV kept in standby may not cold boot for weeks.
+    console.log('screensaver: custom screen savers are held back on this TV - going back to the LG default');
+    setScreensaver('stock', 'dim', function () {});
   }
 }
 
@@ -146,6 +152,14 @@ function slowSwitch() {
     return !!t && t !== 'qml';
   } catch (e) {}
   return false;
+}
+
+// Where the stock screen saver is not QML (Flutter on webOS 10 and 11), a custom
+// one has left the picture muted, HDMI-CEC and ARC dead and sound on the TV
+// speakers only, until a power cut (#366). Held back there until the cause is
+// found.
+function held() {
+  return slowSwitch();
 }
 
 function switching() {
@@ -205,7 +219,7 @@ function screensaverList() {
       label: SCREENSAVERS[k].label,
       description: SCREENSAVERS[k].description,
       active: k === cur,
-      available: k === 'stock' || !!(assetPathFn && assetPathFn(SCREENSAVERS[k].qml))
+      available: k === 'stock' || (!held() && !!(assetPathFn && assetPathFn(SCREENSAVERS[k].qml)))
     });
   }
   return {
@@ -215,6 +229,7 @@ function screensaverList() {
     modes: out,
     writable: !!(configObj && configObj.allowControl),
     slowSwitch: slowSwitch(),
+    held: held(),
     switching: switching()
   };
 }
@@ -291,6 +306,7 @@ function writeScreensaverQml(src, level) {
 function setScreensaver(mode, level, cb) {
   if (!SCREENSAVERS[mode]) return cb({ ok: false, error: 'unknown screen saver: ' + mode });
   if (switching()) return cb({ ok: false, error: SWITCHING_ERROR });
+  if (mode !== 'stock' && held()) return cb({ ok: false, error: HELD_ERROR });
   level = (level === 'bright') ? 'bright' : 'dim';
 
   unmountScreensaver(function () {
@@ -415,6 +431,7 @@ module.exports = {
   screensaverMode: screensaverMode,
   screensaverList: screensaverList,
   switching: switching,
+  held: held,
   setScreensaver: setScreensaver,
   restageScreensaver: restageScreensaver,
   trigger: trigger

@@ -2955,6 +2955,10 @@
   "text": "Estallidos de color sobre negro, cada pocos segundos.",
   "from": "Bursts of colour on black, a few seconds apart."
  },
+ "srv.saver.held": {
+  "text": "Los salvapantallas personalizados están desactivados en esta TV por ahora. En webOS 10 y posteriores pueden dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV.",
+  "from": "Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged."
+ },
  "srv.saver.noRemote": {
   "text": "no se pudo alcanzar el dispositivo de entrada del mando",
   "from": "could not reach the remote input device"
@@ -3154,6 +3158,10 @@
  "ss.firmwareNote": {
   "text": "Nota: si se actualiza el firmware, el salvapantallas volverá al de LG por defecto.",
   "from": "Note: if a firmware update is applied, the screen saver will be restored to the LG default."
+ },
+ "ss.held": {
+  "text": "Los salvapantallas personalizados están desactivados en esta TV por ahora. En webOS 10 y posteriores pueden dejar sin imagen, sin sonido y sin control HDMI hasta que se desenchufa la TV.",
+  "from": "Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged."
  },
  "ss.inUse": {
   "text": "En uso",
@@ -4010,6 +4018,10 @@
  "tv.saver.head.screenSaver": {
   "text": "Salvapantallas",
   "from": "Screen saver"
+ },
+ "tv.saver.held": {
+  "text": "Salvapantallas personalizados",
+  "from": "Custom screen savers"
  },
  "tv.saver.ours.hint": {
   "text": "Sustituye al salvapantallas de LG. Todo en él se desplaza lentamente para que ningún píxel mantenga la misma imagen.",

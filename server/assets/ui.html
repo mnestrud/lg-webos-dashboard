@@ -4505,6 +4505,7 @@ async function loadScreensavers() {
   q('ss-note').textContent = !d.writable
     ? t('ss.controlsOff', 'Controls are disabled in config.json, so the screen saver cannot be changed from here.')
     : ssSwitching ? SS_SWITCHING
+    : d.held ? t('ss.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged.')
     : (d.slowSwitch ? t('ss.slowSwitch', 'On this TV, switching to or from the LG default takes about a minute, and the screen goes dark while it does.') + ' ' : '')
       + t('ss.firmwareNote', 'Note: if a firmware update is applied, the screen saver will be restored to the LG default.');
   ssWritable = d.writable;

@@ -32,21 +32,20 @@ fi
 # Restore the chosen screen saver. The app directory is on the read-only
 # overlay, so the replacement is a bind mount and does not survive a reboot.
 #
-# sam.service is up well before this hook runs and reads each appinfo.json only
-# once, so where the replacement changes the app's type - as it does on a set
-# whose screen saver ships as Flutter - it has to read the file again or the
-# launch goes to the wrong runner and nothing draws. Comparing the manifest
-# either side of the mount says exactly when that is, with no call onto the bus.
-# Seconds into boot is the cheapest moment to restart it.
+# Only where LG's screen saver is QML like ours. Where it ships as Flutter
+# (webOS 10 and 11) a custom one has left the picture muted, HDMI-CEC and ARC
+# dead and sound on the TV speakers only, until a power cut (#366), so it is
+# held back there. The stock type is recorded for the server, which cannot read
+# it while one of ours is mounted over it.
 if [ -f /var/lib/tvweb/screensaver/.tvweb-screensaver ]; then
   ssapp=/usr/palm/applications/com.webos.app.screensaver
   stock_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' "$ssapp/appinfo.json" 2>/dev/null)
-  mount --bind /var/lib/tvweb/screensaver "$ssapp" 2>/dev/null || true
-  staged_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' "$ssapp/appinfo.json" 2>/dev/null)
-  # --no-block: stopping sam waits on every app in its cgroup, which is most of
-  # a minute, and no hook may hold up boot for that.
-  if [ -n "$stock_type" ] && [ -n "$staged_type" ] && [ "$stock_type" != "$staged_type" ]; then
-    systemctl restart --no-block sam >/dev/null 2>&1 || true
+  staged_type=$(sed -n 's/.*"type"[^"]*"\([^"]*\)".*/\1/p' /var/lib/tvweb/screensaver/appinfo.json 2>/dev/null)
+  [ -n "$stock_type" ] && echo "$stock_type" > /var/lib/tvweb/screensaver-stock-type
+  if [ -n "$stock_type" ] && [ "$stock_type" = "$staged_type" ]; then
+    mount --bind /var/lib/tvweb/screensaver "$ssapp" 2>/dev/null || true
+  else
+    echo "$(date): custom screen saver held back (stock ${stock_type:-unknown}, ours ${staged_type:-unknown})"
   fi
 fi
 

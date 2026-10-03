@@ -548,6 +548,10 @@ function saverRows(d) {
   var slow = d.slowSwitch && d.current === 'stock' ? function (m) { return m.id !== 'stock'; }
            : d.slowSwitch ? function (m) { return m.id === 'stock'; }
            : function () { return false; };
+  if (d.held) {
+    r.push({ label: t('tv.saver.held', 'Custom screen savers'), value: t('common.off', 'Off'), cls: 'off',
+             hint: t('ss.held', 'Custom screen savers are turned off on this TV for now. On webOS 10 and later they can leave the picture, the sound and HDMI control off until the TV is unplugged.') });
+  }
   d.modes.filter(function (m) { return m.available; }).forEach(function (m) {
     r.push({ label: m.label, value: m.active ? t('ss.inUse', 'In use') : '', cls: m.active ? 'on' : '',
              act: d.writable && !busy ? 'saver' : null, key: m.id,
