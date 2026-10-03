@@ -30,7 +30,7 @@ if [ -f /var/lib/tvweb/adblock_enabled ] && [ -f /var/lib/tvweb/adblock_hosts ];
 fi
 
 # LG's screen saver ships as QML up to webOS 9 and as Flutter from webOS 10.
-# On the Flutter sets, the two things here that make sam reread its manifests -
+# On the Flutter TVs, the two things here that make sam reread its manifests -
 # a custom screen saver and tile hiding - have each been followed by the picture
 # muted, HDMI-CEC and ARC dead and sound on the TV speakers only, until a power
 # cut (#366). Both are held back there until the cause is found, unless

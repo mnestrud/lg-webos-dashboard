@@ -1592,7 +1592,21 @@ footer{margin-top:38px;font-size:12px;letter-spacing:.10em;text-transform:upperc
 
 <script src="/assets/i18n.js"></script>
 <script>
-const K = new URLSearchParams(location.search).get('k') || '';
+/* The token arrives once in the link (a bookmark, or the TV's QR codes) and
+   is kept in the browser, so it can come out of the address bar and stay out
+   of history and copied URLs. Where storage is blocked it stays in the URL,
+   or a reload would lose it. */
+const K = (() => {
+  const s = new URLSearchParams(location.search);
+  const k = s.get('k');
+  if (k === null) {
+    try { return localStorage.getItem('tvweb_k') || ''; } catch (e) { return ''; }
+  }
+  try { localStorage.setItem('tvweb_k', k); } catch (e) { return k; }
+  s.delete('k');
+  history.replaceState(history.state, '', location.pathname + (s.toString() ? '?' + s : '') + location.hash);
+  return k;
+})();
 const q = id => document.getElementById(id);
 
 let inFlight = 0;

@@ -58,6 +58,7 @@ var assetPathFn = null;
 var assetDirsList = [];
 var lunaFn = null;
 var getMqttStatusFn = null;
+var appsChangedFn = function () {};
 var versionStr = '';
 
 // ---------------------------------------------------------------- first-run setup
@@ -849,6 +850,7 @@ function handleRequest(req, res) {
   if (pathname === '/api/apps/uninstall' && req.method === 'POST') {
     return readJsonBody(req, res, function (body) {
       appsModule.uninstallApp(body.id, function (r) {
+        if (r && r.ok) appsChangedFn();
         send(res, r && r.ok ? 200 : 400, JSON.stringify(r));
       });
     });
@@ -907,7 +909,8 @@ function handleRequest(req, res) {
       // The TV dashboard's System page, which reads one endpoint, also lists
       // the sound and SIMPLINK settings. Copied, since s is telemetry's cache.
       lgSettingsModule.collect(['sound', 'hdmi', 'devices'], function (ls) {
-        var copy = JSON.parse(JSON.stringify(s));
+        var copy = {};
+        for (var k in s) copy[k] = s[k];
         copy.lgSettings = ls.rows;
         send(res, 200, JSON.stringify(copy));
       });
@@ -1067,6 +1070,7 @@ function init(opts) {
   if (opts.assetDirs) assetDirsList = opts.assetDirs;
   if (opts.luna) lunaFn = opts.luna;
   if (opts.getMqttStatus) getMqttStatusFn = opts.getMqttStatus;
+  if (opts.appsChanged) appsChangedFn = opts.appsChanged;
   if (opts.version) versionStr = opts.version;
 
   return {
