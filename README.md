@@ -329,7 +329,12 @@ The MQTT bridge also needs an MQTT broker on the network. Home Assistant's Mosqu
 
 ### Tested TVs
 
-Tested across the following TVs so far. The Luna service names and `/proc/lg` paths this relies on may differ across webOS versions and panel types.
+Confirmed across 30 models so far (webOS 3.4 through 26). Other rooted models should work.
+
+<details>
+<summary><strong>View all 30 tested models (webOS 3.4 – 26)</strong></summary>
+
+The Luna service names and `/proc/lg` paths this relies on may differ across webOS versions and panel types.
 
 | Model       | webOS        | Firmware | Panel | Notes                                                          |
 | :---------- | :----------- | :------- | :---- | :------------------------------------------------------------- |
@@ -363,6 +368,8 @@ Tested across the following TVs so far. The Luna service names and `/proc/lg` pa
 | 42LX3Q6LA   | —            | 33.31.68 | OLED  | Flex; model number has no OLED prefix                          |
 | OLED65G36LA | 26 (11.2.0)  | 43.21.71 | OLED  | Rooted with DualBro; privacy and app installs confirmed        |
 | OLED83G5WUA | 26 (11.2.0)  | 43.21.71 | OLED  | Rooted with DualBro; runs with internet access blocked         |
+
+</details>
 
 **Tested on another model?** Please [open an issue](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/new) with the TV model, webOS version, and the contents of `/var/lib/tvweb/tvweb.log` — whether everything worked or something broke — and we will add a row.
 
@@ -448,23 +455,15 @@ cat /var/lib/webosbrew/tvweb-boot.log
 
 ## Home Assistant & MQTT
 
-### What these are
+Glasshouse includes a built-in MQTT bridge that publishes the TV's telemetry and controls to an MQTT broker using **MQTT Discovery**. Home Assistant automatically discovers the TV as a single unified device with all its sensors, switches, and media controls — with **no YAML configuration required**. Other MQTT clients (Node-RED, Telegraf, custom scripts) can subscribe to the same topics.
 
-**MQTT** is a lightweight messaging protocol: a device publishes state updates to a named topic, and any subscriber instantly receives them. It relies on a **broker** — a small server that relays those messages between publishers and subscribers. [Mosquitto](https://mosquitto.org/) is the usual one, and Home Assistant ships it as a one-click add-on.
+### Quick Setup
 
-This project publishes the TV's telemetry to a broker, and describes its own entities using the **MQTT Discovery** convention. Home Assistant reads that description and creates the device with all its sensors and controls by itself.
+1. Open the dashboard in a browser, then navigate to the **MQTT** tab (`/?tab=mqtt`).
+2. Enter your MQTT broker address and credentials (e.g. Home Assistant's Mosquitto add-on).
+3. Switch **MQTT bridge** to **On** and click **Save**.
 
-There is no YAML to write.
-
-Home Assistant is one consumer of the MQTT interface. Other MQTT clients can subscribe to the same topics, including Node-RED, Telegraf, scripts and other automation systems.
-
-### Setting it up from the dashboard
-
-Open the dashboard, then the **MQTT** tab. Fill in the broker address and credentials, switch **MQTT bridge** on, and save.
-
-The server writes `config.json` on the TV and restarts itself; the page reconnects on its own after a few seconds.
-
-Home Assistant picks up the device within a few seconds of the bridge connecting.
+The server saves `config.json` on the TV and restarts; Home Assistant discovers the TV automatically within seconds.
 
 <p align="center">
   <a href="docs/screenshots/mqtt.png"><img src="docs/screenshots/mqtt.png" alt="MQTT tab: bridge status and switch beside the broker and device fields, with the entity categories published to Home Assistant" width="700"></a>
@@ -472,90 +471,7 @@ Home Assistant picks up the device within a few seconds of the bridge connecting
   <sub>MQTT bridge configuration and connection status.</sub>
 </p>
 
-The panel reports whether the bridge is connected to the broker and how long ago it last published, so a wrong address or a rejected password shows up there rather than in the log on the TV.
-
-### Setting it up from a config file
-
-Equivalent to the above, and the better route for installing several TVs from one machine or for keeping the settings under version control.
-
-From `server/`, where step 1 left off:
-
-```bash
-cp ../config.example.json config.json
-```
-
-Set the broker under `mqtt` and set `enabled` to `true`, then run `./deploy.sh <tv-ip>` again.
-
-Leaving `device.name` and `device.model` empty makes the TV report its own model and firmware at runtime.
-
-`deploy.sh` only installs this file if the TV does not already have one, so it will not overwrite settings saved from the dashboard.
-
-To replace an existing config, edit it through the dashboard or remove `/var/lib/tvweb/config.json` first.
-
-<details>
-<summary><strong>Which settings live where?</strong></summary>
-
-The dashboard can change the broker, credentials, topic prefix and device identity — the things that decide *where* telemetry goes.
-
-`port`, `host`, `allowControl`, `allowPower` and `token` are file-only. They decide *who can reach the server at all*, and a web UI able to widen its own exposure would defeat the point of setting them. `allowTileHiding` and `allowOnWebos10` can be set here or from the Server tab.
-
-Edit those in `config.json` and redeploy, or edit `/var/lib/tvweb/config.json` on the TV and restart.
-
-`apps.hosts` and `apps.repos` are file-only as well. `apps.hosts` lists the names, beyond IP addresses and `localhost`, that may be used to reach the dashboard when installing apps, for example `"apps": { "hosts": ["lgtv.local"] }`. `apps.repos` lists further catalogs, served over https in the Homebrew Channel format, to show beside the default one. `apps.sideload: true` allows installing from a URL or an uploaded file without a token; with a token set, or for a request from the TV itself, it is allowed already. The switch on the Apps tab sets it too.
-
-`fetch.ip` is file-only too: `"fetch": { "ip": "4" }` or `"6"` makes the TV's curl use that address family first. Without it, a connection that fails is retried with `-6`, then `-4`, which covers networks where only one family reaches the catalog.
-
-`allowPower` is on, like the other controls: who on the network can use them is decided by opening the dashboard to the network in setup, and by `token`. `"allowPower": false` hides and refuses power off, power on and reboot, in the dashboard and in Home Assistant.
-
-> [!NOTE]
-> Give the TV its own MQTT user with a restricted topic ACL rather than reusing the main Home Assistant credentials. See [docs/SECURITY.md](docs/SECURITY.md).
-
-</details>
-
-### PicCap
-
-[PicCap](https://github.com/TBSniller/piccap) captures the TV's screen for a Hyperion server, which drives an ambient light from it. Where PicCap is installed, the Advanced tab has a **PicCap capture** switch that starts and stops the capture, so the light uses nothing while it is off, and Home Assistant gets a **PicCap Capture** switch under Controls & Media. Nothing is asked of PicCap on a TV without it. Its Home Assistant entity can be switched off like any other, which also stops the server checking PicCap's state every 30 seconds.
-
-The retained state topic `<topicPrefix>/state/piccap/power` carries `ON` or `OFF`, and the command topic `<topicPrefix>/command/piccap/power` accepts `ON` or `OFF`. Commands need `allowControl`. Telemetry includes boolean `piccap.power` while PicCap answers.
-
-### Using MQTT without Home Assistant
-
-The bridge is a plain MQTT publisher, so anything that speaks MQTT can read it.
-
-Telemetry is published as JSON to `<topicPrefix>/telemetry`, availability to `<topicPrefix>/status`, and commands are accepted on `<topicPrefix>/command/*`.
-
-```bash
-mosquitto_sub -h <broker> -t 'lgtv/#' -v
-```
-
-Node-RED, Telegraf into InfluxDB, or a script subscribing to that topic all work the same way. The Discovery messages are simply ignored by anything that is not Home Assistant.
-
-### Multiple TVs
-
-Each TV on the same broker needs a unique `topicPrefix` and `device.id`, otherwise they overwrite each other's state and disconnect each other.
-
-Both are editable from each TV's own dashboard.
-
-For the config-file route, `deploy.sh` checks for `server/config.<tv-ip>.json` before falling back to `server/config.json`, which keeps per-TV settings from being flattened by a shared file.
-
-<details>
-<summary><strong>Running one half without the other</strong></summary>
-
-|                            | `web.enabled` | `mqtt.enabled` |
-| :------------------------- | :------------ | :------------- |
-| Dashboard and MQTT         | `true`        | `true`         |
-| Dashboard only *(default)* | `true`        | `false`        |
-| MQTT only                  | `false`       | `true`         |
-
-With the dashboard disabled the server is an MQTT bridge with no web interface, which is the safer shape if everything is driven from an MQTT client — the dashboard is an unauthenticated control endpoint unless `token` is set.
-
-Note that this also removes the settings UI, so an MQTT-only install is configured by file.
-
-With both disabled the server exits rather than idling.
-
-</details>
-
-See [docs/HOME-ASSISTANT.md](docs/HOME-ASSISTANT.md) for the entity list and example automations.
+For config-file setup, multi-TV configurations, settings reference, PicCap integration, the complete list of discovered entities, and example automations, see **[docs/HOME-ASSISTANT.md](docs/HOME-ASSISTANT.md)**.
 
 ---
 
