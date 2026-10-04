@@ -37,6 +37,8 @@ use modern JavaScript.
   and the boot hook. `server/deploy.sh` installs over ssh; its `FILES` list
   must name every file the server needs.
 - `hbc/` and `scripts/build-ipk.py` - the Homebrew Channel package.
+- `android/` - the Android app: a TV list and a WebView of each TV's web
+  dashboard. Kotlin, built by the `android` workflow; docs/android.md.
 - `test/` - `node test/run-all.js` runs every `test-*.js`; fixtures are real
   stats from a B8 (webOS 4) and a G4 (webOS 9).
 

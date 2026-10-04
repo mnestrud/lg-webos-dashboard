@@ -50,6 +50,7 @@ nav:
       - On the TV: dashboard/tv-app.md
       - Power and standby: dashboard/power.md
       - Server: dashboard/server.md
+      - Android app: android.md
   - Home Assistant:
       - HOME-ASSISTANT.md
       - Entities: HOME-ASSISTANT-ENTITIES.md
