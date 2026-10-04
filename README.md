@@ -368,7 +368,7 @@ Tested across the following TVs so far. The Luna service names and `/proc/lg` pa
 
 **Black picture and no sound on webOS 10 and later ([#366](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/366)).** On webOS 10 and 11, after a custom screen saver or tile hiding has been used, apps and HDMI inputs can show a black picture with no sound. HDMI-CEC stops working and sound plays only through the TV's own speakers. Standby does not clear it; unplugging the TV does. The cause is not yet known.
 
-Both features are turned off on these TVs. One already in use stays until the TV is next fully restarted, then the TV goes back to stock. They can be turned back on, for example to help test a fix, by adding `"allowOnWebos10": true` to `/var/lib/tvweb/config.json` and fully restarting the TV. The dashboard then notes that they were turned back on.
+Both features are turned off on these TVs. One already in use stays until the TV is next fully restarted, then the TV goes back to stock. They can be turned back on, for example to help test a fix, by adding `"allowOnWebos10": true` to `/var/lib/tvweb/config.json` and fully restarting the TV. The dashboard then notes that they were turned back on. With tile hiding on, installing an app from the dashboard then also restarts the app manager, which is the step suspected of causing this.
 
 If it happens, please add to [#366](https://github.com/rorygallagher2024/lg-webos-dashboard/issues/366) rather than opening a new issue, with the output of these, run before restarting the TV:
 
