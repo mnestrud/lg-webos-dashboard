@@ -168,6 +168,30 @@ console.log('Running test-telemetry.js ...');
   console.log('  ✓ hdmiPorts parses both HDMI 2.0 and HDMI 2.1 PHY timing nodes');
 })();
 
+// 6a. Stable Sync Info priority over RAW Sync Info
+(function testStableSyncPriority() {
+  mockEnv.files['/proc/lg/hdmi20/port2/status'] =
+    '[RAW Sync Info]\n' +
+    '  [9] Sig:[1920](0)x[1081](0)@[60]Hz\n' +
+    '[Stable Sync Info]\n' +
+    '  [15] Sig:[1920](0)x[1080](0)@[60]Hz\n' +
+    'PHY Lock[1]\n' +
+    'connected: on\n';
+
+  assert.strictEqual(telemetry.getVideoSignal(2), '1920x1080 @ 60Hz', 'Stable sync resolution preferred over raw sync jitter');
+  var p2 = telemetry.hdmiPorts()[2];
+  assert.strictEqual(p2.resolution, '1920x1080', 'hdmiPorts uses stable sync resolution');
+  assert.strictEqual(p2.refreshHz, 60);
+
+  // Target port checks
+  assert.strictEqual(telemetry.getVideoSignal(0), '3840x2160 @ 60Hz', 'targets port 0 specifically');
+  assert.strictEqual(telemetry.getVideoSignal(1), '3840x2160 @ 120Hz', 'targets port 1 specifically');
+  assert.strictEqual(telemetry.getVideoSignal(3), null, 'unconnected target port returns null');
+
+  delete mockEnv.files['/proc/lg/hdmi20/port2/status'];
+  console.log('  ✓ Stable Sync Info preferred over raw sync jitter and target port respected');
+})();
+
 // 6b. An HDMI input is active only while it is on screen
 (function testHdmiActive() {
   var fg = 'com.webos.applicationManager/getForegroundAppInfo';
@@ -300,35 +324,56 @@ telemetry.refreshInstalledApps(function (apps) {
         assert.strictEqual(stats.wifi.level, -63);
         assert.ok(stats.oled && stats.oled.panel_hours === 3500);
         assert.ok(Array.isArray(stats.apps) && stats.apps.length === 2);
+        assert.strictEqual(stats.signal, '3840x2160 @ 120Hz', 'stats signal matches active HDMI 2 input');
+        assert.ok(stats.hdmi_diag && stats.hdmi_diag.port === 1, 'stats hdmi_diag matches active port 1');
 
         console.log('  ✓ collectStats aggregates full telemetry payload including apps');
 
-        // 11. LG's Always Ready display reads as switched off, not "Active"
-        var settings = mockEnv.luna['com.webos.service.settings/getSystemSettings'].settings;
-        settings.lifeOnScreenMode = 'allEnabled';
-        mockEnv.luna['com.webos.service.tvpower/power2/getPowerState'] =
-          { returnValue: true, state: 'ACTIVE', 'sub state': 'always on display' };
+        // Internal app (Jellyfin/Moonfin/Netflix) foreground reporting null signal
+        var origApp = mockEnv.luna['com.webos.applicationManager/getForegroundAppInfo'];
+        mockEnv.luna['com.webos.applicationManager/getForegroundAppInfo'] = { returnValue: true, appId: 'org.jellyfin.webos' };
         telemetry.clearCache();
-        telemetry.collectStats(function (first) {
-          assert.strictEqual(first.alwaysReadyScreen, true);
-          telemetry.clearCache();
-          telemetry.collectStats(function (second) {
-            assert.strictEqual(second.powerState.raw, 'Always Ready');
-            delete settings.lifeOnScreenMode;
-            console.log('  ✓ the Always Ready display is reported as its own power state');
+        telemetry.collectStats(function (internalStats) {
+          assert.strictEqual(internalStats.signal, null, 'internal app yields null signal');
+          assert.strictEqual(internalStats.hdmi_diag, null, 'internal app yields null hdmi_diag');
 
-            // 12. A clock stepped back does not keep serving the last stats
-            mockEnv.files['/proc/uptime'] = '99999.00 45678.90\n';
-            var realNow = Date.now;
-            Date.now = function () { return realNow() - 600000; };
-            telemetry.collectStats(function (third) {
-              Date.now = realNow;
-              // Asserted outside: collectStats swallows what its callbacks throw.
-              setImmediate(function () {
-                assert.strictEqual(third.uptime, 99999);
-                console.log('  ✓ a clock stepped back does not keep serving the last stats');
-                console.log('ALL test-telemetry.js assertions passed!\n');
-                mockEnv.restore();
+          // Switching to HDMI 1 (port 0)
+          mockEnv.luna['com.webos.applicationManager/getForegroundAppInfo'] = { returnValue: true, appId: 'com.webos.app.hdmi1' };
+          telemetry.clearCache();
+          telemetry.collectStats(function (hdmi1Stats) {
+            assert.strictEqual(hdmi1Stats.signal, '3840x2160 @ 60Hz', 'HDMI 1 yields port 0 signal');
+            assert.ok(hdmi1Stats.hdmi_diag && hdmi1Stats.hdmi_diag.port === 0, 'HDMI 1 yields port 0 diagnostics');
+            mockEnv.luna['com.webos.applicationManager/getForegroundAppInfo'] = origApp;
+            console.log('  ✓ active foreground app determines HDMI signal and diagnostics');
+
+            // 11. LG's Always Ready display reads as switched off, not "Active"
+            var settings = mockEnv.luna['com.webos.service.settings/getSystemSettings'].settings;
+            settings.lifeOnScreenMode = 'allEnabled';
+            mockEnv.luna['com.webos.service.tvpower/power2/getPowerState'] =
+              { returnValue: true, state: 'ACTIVE', 'sub state': 'always on display' };
+            telemetry.clearCache();
+            telemetry.collectStats(function (first) {
+              assert.strictEqual(first.alwaysReadyScreen, true);
+              telemetry.clearCache();
+              telemetry.collectStats(function (second) {
+                assert.strictEqual(second.powerState.raw, 'Always Ready');
+                delete settings.lifeOnScreenMode;
+                console.log('  ✓ the Always Ready display is reported as its own power state');
+
+                // 12. A clock stepped back does not keep serving the last stats
+                mockEnv.files['/proc/uptime'] = '99999.00 45678.90\n';
+                var realNow = Date.now;
+                Date.now = function () { return realNow() - 600000; };
+                telemetry.collectStats(function (third) {
+                  Date.now = realNow;
+                  // Asserted outside: collectStats swallows what its callbacks throw.
+                  setImmediate(function () {
+                    assert.strictEqual(third.uptime, 99999);
+                    console.log('  ✓ a clock stepped back does not keep serving the last stats');
+                    console.log('ALL test-telemetry.js assertions passed!\n');
+                    mockEnv.restore();
+                  });
+                });
               });
             });
           });
