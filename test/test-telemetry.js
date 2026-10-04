@@ -343,35 +343,48 @@ telemetry.refreshInstalledApps(function (apps) {
           telemetry.collectStats(function (hdmi1Stats) {
             assert.strictEqual(hdmi1Stats.signal, '3840x2160 @ 60Hz', 'HDMI 1 yields port 0 signal');
             assert.ok(hdmi1Stats.hdmi_diag && hdmi1Stats.hdmi_diag.port === 0, 'HDMI 1 yields port 0 diagnostics');
-            mockEnv.luna['com.webos.applicationManager/getForegroundAppInfo'] = origApp;
-            console.log('  ✓ active foreground app determines HDMI signal and diagnostics');
 
-            // 11. LG's Always Ready display reads as switched off, not "Active"
-            var settings = mockEnv.luna['com.webos.service.settings/getSystemSettings'].settings;
-            settings.lifeOnScreenMode = 'allEnabled';
-            mockEnv.luna['com.webos.service.tvpower/power2/getPowerState'] =
-              { returnValue: true, state: 'ACTIVE', 'sub state': 'always on display' };
+            // Switching to HDMI 2 on B8 hardware where HDMI 2 routes to PHY port 2 (port 1 disconnected)
+            mockEnv.files['/proc/lg/hdmi20/port2/status'] = mockEnv.files['/proc/lg/hdmi20/port1/status'];
+            delete mockEnv.files['/proc/lg/hdmi20/port1/status'];
+            mockEnv.luna['com.webos.applicationManager/getForegroundAppInfo'] = { returnValue: true, appId: 'com.webos.app.hdmi2' };
             telemetry.clearCache();
-            telemetry.collectStats(function (first) {
-              assert.strictEqual(first.alwaysReadyScreen, true);
-              telemetry.clearCache();
-              telemetry.collectStats(function (second) {
-                assert.strictEqual(second.powerState.raw, 'Always Ready');
-                delete settings.lifeOnScreenMode;
-                console.log('  ✓ the Always Ready display is reported as its own power state');
+            telemetry.collectStats(function (b8Stats) {
+              assert.strictEqual(b8Stats.signal, '3840x2160 @ 120Hz', 'HDMI 2 yields port 2 signal when port 1 has no signal (B8 routing)');
+              assert.ok(b8Stats.hdmi_diag && b8Stats.hdmi_diag.port === 2, 'HDMI 2 yields port 2 diagnostics on B8 routing');
+              mockEnv.files['/proc/lg/hdmi20/port1/status'] = mockEnv.files['/proc/lg/hdmi20/port2/status'];
+              delete mockEnv.files['/proc/lg/hdmi20/port2/status'];
 
-                // 12. A clock stepped back does not keep serving the last stats
-                mockEnv.files['/proc/uptime'] = '99999.00 45678.90\n';
-                var realNow = Date.now;
-                Date.now = function () { return realNow() - 600000; };
-                telemetry.collectStats(function (third) {
-                  Date.now = realNow;
-                  // Asserted outside: collectStats swallows what its callbacks throw.
-                  setImmediate(function () {
-                    assert.strictEqual(third.uptime, 99999);
-                    console.log('  ✓ a clock stepped back does not keep serving the last stats');
-                    console.log('ALL test-telemetry.js assertions passed!\n');
-                    mockEnv.restore();
+              mockEnv.luna['com.webos.applicationManager/getForegroundAppInfo'] = origApp;
+              console.log('  ✓ active foreground app determines HDMI signal and diagnostics');
+
+              // 11. LG's Always Ready display reads as switched off, not "Active"
+              var settings = mockEnv.luna['com.webos.service.settings/getSystemSettings'].settings;
+              settings.lifeOnScreenMode = 'allEnabled';
+              mockEnv.luna['com.webos.service.tvpower/power2/getPowerState'] =
+                { returnValue: true, state: 'ACTIVE', 'sub state': 'always on display' };
+              telemetry.clearCache();
+              telemetry.collectStats(function (first) {
+                assert.strictEqual(first.alwaysReadyScreen, true);
+                telemetry.clearCache();
+                telemetry.collectStats(function (second) {
+                  assert.strictEqual(second.powerState.raw, 'Always Ready');
+                  delete settings.lifeOnScreenMode;
+                  console.log('  ✓ the Always Ready display is reported as its own power state');
+
+                  // 12. A clock stepped back does not keep serving the last stats
+                  mockEnv.files['/proc/uptime'] = '99999.00 45678.90\n';
+                  var realNow = Date.now;
+                  Date.now = function () { return realNow() - 600000; };
+                  telemetry.collectStats(function (third) {
+                    Date.now = realNow;
+                    // Asserted outside: collectStats swallows what its callbacks throw.
+                    setImmediate(function () {
+                      assert.strictEqual(third.uptime, 99999);
+                      console.log('  ✓ a clock stepped back does not keep serving the last stats');
+                      console.log('ALL test-telemetry.js assertions passed!\n');
+                      mockEnv.restore();
+                    });
                   });
                 });
               });

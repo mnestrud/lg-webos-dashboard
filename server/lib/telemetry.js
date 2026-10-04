@@ -369,7 +369,9 @@ function netBytes() {
 }
 
 function getVideoSignal(targetPort) {
-  var portsToScan = (typeof targetPort === 'number' && targetPort >= 0 && targetPort < 4)
+  var portsToScan = Array.isArray(targetPort)
+    ? targetPort
+    : (typeof targetPort === 'number' && targetPort >= 0 && targetPort < 4)
     ? [targetPort]
     : [0, 1, 2, 3];
 
@@ -428,7 +430,9 @@ function readRemoteInfo() {
 }
 
 function getActiveHdmiDiagnostics(targetPort) {
-  var portsToScan = (typeof targetPort === 'number' && targetPort >= 0 && targetPort < 4)
+  var portsToScan = Array.isArray(targetPort)
+    ? targetPort
+    : (typeof targetPort === 'number' && targetPort >= 0 && targetPort < 4)
     ? [targetPort]
     : [0, 1, 2, 3];
 
@@ -496,6 +500,23 @@ function getActiveHdmiDiagnostics(targetPort) {
       qms: qmsMatch ? (qmsMatch[1] === '1') : null
     };
   }
+  return null;
+}
+
+function getHdmiSignal(hdmiNum) {
+  if (typeof hdmiNum !== 'number' || hdmiNum < 1 || hdmiNum > 4) return null;
+  // Motherboards route HDMI PHYs differently:
+  // e.g. B8 routes HDMI 2 to PHY port 2, while others route HDMI 1..4 to PHY 0..3.
+  var candidates = [hdmiNum - 1, hdmiNum];
+  for (var c = 0; c < candidates.length; c++) {
+    var p = candidates[c];
+    if (p >= 0 && p < 4) {
+      var sig = getVideoSignal(p);
+      if (sig) return { signal: sig, diag: getActiveHdmiDiagnostics(p) };
+    }
+  }
+  var anySig = getVideoSignal();
+  if (anySig) return { signal: anySig, diag: getActiveHdmiDiagnostics() };
   return null;
 }
 
@@ -1087,8 +1108,6 @@ function collectStats(cb) {
   }
   if (n) prevNet = n;
 
-  var hdmiDiag = getActiveHdmiDiagnostics();
-  noteHdmiSeen(hdmiDiag);
   var peInfo = getPictureEngineInfo();
   var uptimeSec = Math.floor(parseFloat(readTrimmed('/proc/uptime') || '0'));
 
@@ -1141,8 +1160,8 @@ function collectStats(cb) {
     netTotal: n ? { rx: n.rx, tx: n.tx, iface: n.iface } : null,
     mac: n ? macAddress(n.iface) : null,
     emmc: emmcInfo(),
-    signal: getVideoSignal(),
-    hdmi_diag: hdmiDiag,
+    signal: null,
+    hdmi_diag: null,
     picture_engine: peInfo,
     colorimetry: peInfo ? peInfo.colorimetry : null,
     power: {
@@ -1347,11 +1366,12 @@ function collectStats(cb) {
               (inputNameMap[shortApp] + ' (' + shortApp.toUpperCase() + ')') : out.app_name;
 
             var hdmiMatch = String(app.appId).match(/^com\.webos\.app\.hdmi([1-4])$/i);
-            if (hdmiMatch && !out.screenSaver && (!out.powerState || out.powerState.state !== 'Off')) {
-              var activePort = parseInt(hdmiMatch[1], 10) - 1;
-              out.signal = getVideoSignal(activePort);
-              out.hdmi_diag = getActiveHdmiDiagnostics(activePort);
-              noteHdmiSeen(out.hdmi_diag);
+            var isScreenOff = out.screenSaver || (out.powerState && (out.powerState.screenOn === false || String(out.powerState.raw || out.powerState.state || '').toLowerCase() === 'off'));
+            if (hdmiMatch && !isScreenOff) {
+              var sigObj = getHdmiSignal(parseInt(hdmiMatch[1], 10));
+              out.signal = sigObj ? sigObj.signal : null;
+              out.hdmi_diag = sigObj ? sigObj.diag : null;
+              if (out.hdmi_diag) noteHdmiSeen(out.hdmi_diag);
             } else {
               out.signal = null;
               out.hdmi_diag = null;
@@ -1360,7 +1380,7 @@ function collectStats(cb) {
             out.signal = null;
             out.hdmi_diag = null;
           }
-          if (out.screenSaver || (out.powerState && out.powerState.state === 'Off')) {
+          if (out.screenSaver || (out.powerState && (out.powerState.screenOn === false || String(out.powerState.raw || out.powerState.state || '').toLowerCase() === 'off'))) {
             out.signal = null;
             out.hdmi_diag = null;
           }
@@ -1539,6 +1559,7 @@ module.exports = {
   getVideoSignal: getVideoSignal,
   readRemoteInfo: readRemoteInfo,
   getActiveHdmiDiagnostics: getActiveHdmiDiagnostics,
+  getHdmiSignal: getHdmiSignal,
   getPictureEngineInfo: getPictureEngineInfo,
   formatSoundOutput: formatSoundOutput,
   formatPicMode: formatPicMode,
