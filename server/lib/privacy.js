@@ -117,6 +117,13 @@ var CONSENT_LOCKED = {
   allAllowed:          msg('srv.consent.locked.all', 'The Select-All. Read-only because whether writing it cascades to the other flags is untested.')
 };
 
+/*
+ * Not listed at all. chpAllowed lets LG Channels change the channel list, which
+ * is not tracking, and the TV accepts it again at every start-up with a notice
+ * on screen (#359), so a switch for it could not stay off.
+ */
+var CONSENT_HIDDEN = { chpAllowed: true };
+
 var CONSENT_GROUPS = [
   ['advertising', msg('srv.consent.group.advertising', 'Advertising')],
   ['watching',    msg('srv.consent.group.watching', 'What the TV watches and hears')],
@@ -145,7 +152,6 @@ var CONSENT_GROUP_OF = {
 
   acrOnAllowed: 'watching',
   marketingOnAllowed: 'advertising',
-  chpAllowed: 'services',
   shoppingOnAllowed: 'advertising',
 
   networkAllowed: 'platform',
@@ -191,7 +197,6 @@ var CONSENT_NAMES = {
   marketingOnAllowed:  msg('srv.consent.name.marketingOnAllowed', 'Marketing'),
   shoppingOnAllowed:   msg('srv.consent.name.shoppingOnAllowed', 'Shopping on live TV'),
   generalTermsAllowed: msg('srv.consent.name.generalTermsAllowed', 'Terms of Use and Privacy Policy'),
-  chpAllowed:          'LG Channels',
   acrOnAllowed:        msg('srv.consent.name.acrOnAllowed', 'Screen recognition (master consent)'),
   allAllowed:          msg('srv.consent.name.allAllowed', 'Select All')
 };
@@ -456,7 +461,7 @@ function planConsent(key, on, flags, eln) {
 }
 
 function consentSettable(key) {
-  if (CONSENT_LOCKED[key]) return false;
+  if (CONSENT_LOCKED[key] || CONSENT_HIDDEN[key]) return false;
   if (CONSENT_LABELS[key]) return true;
   return !!loadConsentGroups()[key];
 }
@@ -542,6 +547,7 @@ function readConsentFlags() {
   var re = /"([a-zA-Z0-9_]+Allowed)"\s*:\s*(true|false)/g, m;
   while ((m = re.exec(raw)) !== null) {
     var key = m[1], on = m[2] === 'true';
+    if (CONSENT_HIDDEN[key]) continue;
     var byDoc = CONSENT_LABELS[key] ? null : consentByDocument(key);
     if (CONSENT_LABELS[key]) {
       out.known.push({ key: key, label: CONSENT_LABELS[key][0], detail: CONSENT_LABELS[key][1],
@@ -675,9 +681,9 @@ function collectPrivacy(cb) {
 
 /*
  * The short view both dashboards lead with: three things people mean by LG
- * tracking, what is still on under each, and how to switch each off. Voice and
- * LG Channels are left alone, since they run features people use, and so is
- * anything the TV will not let this server change.
+ * tracking, what is still on under each, and how to switch each off. Voice is
+ * left alone, since it runs features people use, and so is anything the TV
+ * will not let this server change.
  */
 var SIMPLE_KEEP = { voiceAllowed: 1, voice2Allowed: 1 };
 

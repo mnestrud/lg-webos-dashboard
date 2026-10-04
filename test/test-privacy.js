@@ -33,6 +33,22 @@ test('with the ad blocker off the table carries no ad hosts', function () {
   assert.ok(!sinkholed(privacy.adBlockHostsTable('off'), 'ad.lgsmartad.com'));
 });
 
+test('LG Channels is left out of the consents and cannot be written', function () {
+  mockEnv.files['/var/luna/preferences/eula'] = '{"eulaStatus":{"chpAllowed":true,"acrOnAllowed":false,"marketingOnAllowed":true}}';
+  var flags = privacy.readConsentFlags();
+  var keys = flags.known.concat(flags.other).map(function (f) { return f.key; });
+  assert.strictEqual(keys.indexOf('chpAllowed'), -1, 'not listed');
+  assert.ok(keys.indexOf('marketingOnAllowed') !== -1, 'the others still are');
+  delete mockEnv.files['/var/luna/preferences/eula'];
+  var called = false;
+  privacy.init({ luna: function () { called = true; } });
+  called = false;   // init asks the TV its country
+  privacy.setConsent('chpAllowed', false, function (r) {
+    assert.strictEqual(r.ok, false);
+    assert.strictEqual(called, false, 'nothing reaches the TV');
+  });
+});
+
 test('the summary counts what is on, and leaves voice, LG Channels and fixed flags alone', function () {
   var sm = privacy.simpleSummary({
     consentWritable: true,
