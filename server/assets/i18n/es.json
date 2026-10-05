@@ -63,6 +63,34 @@
   "text": "Horas de apagado nocturno",
   "from": "Nightly power-down hours"
  },
+ "adv.offTimer": {
+  "text": "Hora de apagado",
+  "from": "Off Timer"
+ },
+ "adv.offTimer.desc": {
+  "text": "Apaga la TV a esta hora, una vez o los días elegidos.",
+  "from": "Switches the TV off at this time, once or on the days picked."
+ },
+ "adv.offTimer.time": {
+  "text": "Hora del apagado",
+  "from": "Off Timer time"
+ },
+ "adv.onTimer": {
+  "text": "Hora de encendido",
+  "from": "On Timer"
+ },
+ "adv.onTimer.autoOff": {
+  "text": "Encendida así, la TV vuelve a apagarse a las dos horas si no se pulsa ningún botón. Puede desactivarse en el menú Temporizadores de la propia TV.",
+  "from": "Switched on this way, the TV goes back off after two hours unless a button is pressed. That can be turned off in the TV's own Timers menu."
+ },
+ "adv.onTimer.desc": {
+  "text": "Enciende la TV a esta hora, una vez o los días elegidos.",
+  "from": "Switches the TV on at this time, once or on the days picked."
+ },
+ "adv.onTimer.time": {
+  "text": "Hora del encendido",
+  "from": "On Timer time"
+ },
  "adv.piccap": {
   "text": "Captura de PicCap",
   "from": "PicCap capture"
@@ -102,6 +130,34 @@
  "adv.stayConnected.desc": {
   "text": "Mantiene la TV en la red mientras está apagada, salvo cinco horas cada noche, para que este tablero y Home Assistant sigan funcionando y puedan volver a encenderla. La pantalla permanece a oscuras. Gasta unos 12 W en una LG C2, frente a casi nada en el modo en espera normal.",
   "from": "Keeps the TV on the network while it is switched off, apart from five hours each night, so this dashboard and Home Assistant keep working and can switch it back on. The screen stays dark. Uses about 12 W on an LG C2, against almost nothing in normal standby."
+ },
+ "adv.timer.fri": {
+  "text": "Vie",
+  "from": "Fri"
+ },
+ "adv.timer.mon": {
+  "text": "Lun",
+  "from": "Mon"
+ },
+ "adv.timer.sat": {
+  "text": "Sáb",
+  "from": "Sat"
+ },
+ "adv.timer.sun": {
+  "text": "Dom",
+  "from": "Sun"
+ },
+ "adv.timer.thu": {
+  "text": "Jue",
+  "from": "Thu"
+ },
+ "adv.timer.tue": {
+  "text": "Mar",
+  "from": "Tue"
+ },
+ "adv.timer.wed": {
+  "text": "Mié",
+  "from": "Wed"
  },
  "adv.wol": {
   "text": "Wake-on-LAN",
@@ -975,6 +1031,14 @@
   "text": "LG OLED TV",
   "from": "LG OLED TV"
  },
+ "lang.en": {
+  "text": "English",
+  "from": "English"
+ },
+ "lang.es": {
+  "text": "Español",
+  "from": "Español"
+ },
  "lgs.hdmi.audioFormat": {
   "text": "Formato de audio",
   "from": "Audio format"
@@ -1688,24 +1752,28 @@
   "from": "Everything"
  },
  "pv.adblock.full.confirm": {
-  "text": "«Todo» también bloquea los servidores por los que llegan la tienda de apps y las actualizaciones de software de LG, así que instalar apps y actualizar la TV puede dejar de funcionar. ¿Cambiar a «Todo»?",
-  "from": "Everything also blocks the servers LG’s app store and software updates come through, so installing apps and updating the TV may stop working. Switch to Everything?"
+  "text": "«Todo» también bloquea los servicios de la plataforma de LG, así que la tienda de apps, las actualizaciones de software y LG Channels pueden dejar de funcionar. ¿Cambiar a «Todo»?",
+  "from": "Everything also blocks LG’s platform services, so the app store, software updates and LG Channels may stop working. Switch to Everything?"
  },
  "pv.adblock.full.detail": {
-  "text": "También bloquea los servicios de plataforma de LG; la app store y las actualizaciones podrían dejar de funcionar.",
-  "from": "Also blocks LG's platform services, so the app store and software updates may stop working."
+  "text": "También bloquea los servicios de la plataforma de LG, así que la tienda de apps, las actualizaciones de software y LG Channels pueden dejar de funcionar.",
+  "from": "Also blocks LG's platform services, so the app store, software updates and LG Channels may stop working."
  },
  "pv.adblock.full.updates": {
   "text": "Para bloquear solo las actualizaciones del sistema, usa Bloquear actualizaciones de software de la TV en la pestaña Servidor.",
   "from": "To stop only system updates, use Block TV software updates in the Server tab."
  },
  "pv.adblock.full.warn": {
-  "text": "\"Todo\" también bloquea los servidores desde los que se instala el Content Store y por los que LG entrega el firmware, así que la tienda de apps y las actualizaciones pueden dejar de funcionar.",
-  "from": "Everything also blocks the servers the Content Store installs from and LG delivers firmware through, so the app store and updates may stop working."
+  "text": "«Todo» también bloquea los servicios de la plataforma de LG, así que la tienda de apps, las actualizaciones de software y LG Channels pueden dejar de funcionar.",
+  "from": "Everything also blocks LG's platform services, so the app store, software updates and LG Channels may stop working."
  },
  "pv.adblock.off.detail": {
   "text": "No hay nada bloqueado. Las direcciones de publicidad y telemetría de LG funcionan con normalidad.",
   "from": "Nothing is blocked. LG’s advertising and telemetry addresses work as normal."
+ },
+ "pv.adblock.troubleshoot": {
+  "text": "Si una app o un servicio de LG deja de funcionar con el bloqueador activado, desactívalo para comprobar si es la causa.",
+  "from": "If an app or one of LG's services stops working while the blocker is on, switch it off to check whether it is the cause."
  },
  "pv.adid": {
   "text": "Identificador de publicidad",
@@ -2015,6 +2083,18 @@
   "text": "Instalado. El servidor se está reiniciando; esta página se reconecta sola.",
   "from": "Installed. The server is restarting - this page reconnects on its own."
  },
+ "server.language": {
+  "text": "Idioma (este navegador)",
+  "from": "Language (this browser)"
+ },
+ "server.language.desc": {
+  "text": "Auto sigue el idioma de este dispositivo y muestra inglés donde no hay traducción. Otros teléfonos y ordenadores mantienen el suyo.",
+  "from": "Auto follows this device's language, and shows English where there is no translation. Other phones and computers keep their own."
+ },
+ "server.language.group": {
+  "text": "Idioma",
+  "from": "Language"
+ },
  "server.notBack": {
   "text": "El servidor no ha vuelto. Consulta Updating en el README para revertir.",
   "from": "The server has not come back. See Updating in the README to roll back."
@@ -2106,26 +2186,6 @@
  "server.theme.desc": {
   "text": "Auto sigue la configuración clara u oscura de este dispositivo. Otros teléfonos y ordenadores mantienen la suya. El botón del final del pie de página también lo cambia.",
   "from": "Auto follows this device's light or dark setting. Other phones and computers keep their own. The button at the end of the footer changes it too."
- },
- "server.language": {
-  "text": "Idioma (este navegador)",
-  "from": "Language (this browser)"
- },
- "server.language.desc": {
-  "text": "Auto sigue el idioma de este dispositivo y muestra inglés donde no hay traducción. Otros teléfonos y ordenadores mantienen el suyo.",
-  "from": "Auto follows this device's language, and shows English where there is no translation. Other phones and computers keep their own."
- },
- "server.language.group": {
-  "text": "Idioma",
-  "from": "Language"
- },
- "lang.en": {
-  "text": "English",
-  "from": "English"
- },
- "lang.es": {
-  "text": "Español",
-  "from": "Español"
  },
  "server.tvApp": {
   "text": "App del tablero",
@@ -4583,6 +4643,22 @@
   "text": "Mantiene la TV en la red mientras está apagada, salvo cinco horas cada noche, para que Glasshouse y Home Assistant sigan funcionando. La pantalla permanece a oscuras. Gasta unos 12 W en una LG C2.",
   "from": "Keeps the TV on the network while it is switched off, apart from five hours each night, so Glasshouse and Home Assistant keep working. The screen stays dark. Uses about 12 W on an LG C2."
  },
+ "tv.options.timer.hint": {
+  "text": "La hora y los días se eligen desde Glasshouse en un navegador, en Avanzado.",
+  "from": "The time and days are set from Glasshouse in a browser, under Advanced."
+ },
+ "tv.options.timer.off": {
+  "text": "Desactivado ({when})",
+  "from": "Off ({when})"
+ },
+ "tv.options.timer.once": {
+  "text": "{time}, una vez",
+  "from": "{time}, once"
+ },
+ "tv.options.timer.repeats": {
+  "text": "{time}, se repite {days}",
+  "from": "{time}, repeats {days}"
+ },
  "tv.options.wol.hint": {
   "text": "Permite que Home Assistant, un teléfono u otro dispositivo de la red enciendan la TV desde el modo en espera. LG lo llama Mobile TV On.",
   "from": "Lets Home Assistant, a phone or another device on the network switch the TV on from standby. LG calls this Mobile TV On."
@@ -4660,8 +4736,8 @@
   "from": "Press OK again for Everything"
  },
  "tv.privacy.blocking.fullWarn": {
-  "text": "«Todo» puede hacer que la tienda de apps y las actualizaciones de software dejen de funcionar. Pulsa OK otra vez para confirmar.",
-  "from": "Everything may stop the app store and software updates working. Press OK again to confirm."
+  "text": "«Todo» puede hacer que la tienda de apps, las actualizaciones de software y LG Channels dejen de funcionar. Pulsa OK otra vez para confirmar.",
+  "from": "Everything may stop the app store, software updates and LG Channels working. Press OK again to confirm."
  },
  "tv.privacy.blocking.streaming": {
   "text": "Las aplicaciones de streaming no se tocan.",
@@ -4678,6 +4754,10 @@
  "tv.privacy.blocking.toOff": {
   "text": "Pulsa OK para Desactivar",
   "from": "Press OK for Off"
+ },
+ "tv.privacy.blocking.troubleshoot": {
+  "text": "Si una app deja de funcionar, desactiva el bloqueo para comprobar si es la causa.",
+  "from": "If an app stops working, switch blocking off to check whether it is the cause."
  },
  "tv.privacy.capture": {
   "text": "Capturar",
@@ -4700,8 +4780,8 @@
   "from": "Controls are switched off in this dashboard’s config."
  },
  "tv.privacy.everything.hint": {
-  "text": "También bloquea los servicios de plataforma de LG. Las funciones que dependen de ellos, como la tienda de aplicaciones, pueden dejar de funcionar.",
-  "from": "Also blocks LG’s platform services. Features that rely on them, such as the app store, may stop working."
+  "text": "También bloquea los servicios de la plataforma de LG. La tienda de apps, las actualizaciones de software y LG Channels pueden dejar de funcionar.",
+  "from": "Also blocks LG’s platform services. The app store, software updates and LG Channels may stop working."
  },
  "tv.privacy.head.adAndTrackerBlocking": {
   "text": "Bloqueo de anuncios y rastreadores",
@@ -5302,77 +5382,5 @@
  "tv.viewOnly": {
   "text": "Solo visualización",
   "from": "View only"
- },
- "adv.onTimer": {
-  "text": "Hora de encendido",
-  "from": "On Timer"
- },
- "adv.onTimer.desc": {
-  "text": "Enciende la TV a esta hora, una vez o los días elegidos.",
-  "from": "Switches the TV on at this time, once or on the days picked."
- },
- "adv.onTimer.autoOff": {
-  "text": "Encendida así, la TV vuelve a apagarse a las dos horas si no se pulsa ningún botón. Puede desactivarse en el menú Temporizadores de la propia TV.",
-  "from": "Switched on this way, the TV goes back off after two hours unless a button is pressed. That can be turned off in the TV's own Timers menu."
- },
- "adv.onTimer.time": {
-  "text": "Hora del encendido",
-  "from": "On Timer time"
- },
- "adv.offTimer": {
-  "text": "Hora de apagado",
-  "from": "Off Timer"
- },
- "adv.offTimer.desc": {
-  "text": "Apaga la TV a esta hora, una vez o los días elegidos.",
-  "from": "Switches the TV off at this time, once or on the days picked."
- },
- "adv.offTimer.time": {
-  "text": "Hora del apagado",
-  "from": "Off Timer time"
- },
- "adv.timer.mon": {
-  "text": "Lun",
-  "from": "Mon"
- },
- "adv.timer.tue": {
-  "text": "Mar",
-  "from": "Tue"
- },
- "adv.timer.wed": {
-  "text": "Mié",
-  "from": "Wed"
- },
- "adv.timer.thu": {
-  "text": "Jue",
-  "from": "Thu"
- },
- "adv.timer.fri": {
-  "text": "Vie",
-  "from": "Fri"
- },
- "adv.timer.sat": {
-  "text": "Sáb",
-  "from": "Sat"
- },
- "adv.timer.sun": {
-  "text": "Dom",
-  "from": "Sun"
- },
- "tv.options.timer.hint": {
-  "text": "La hora y los días se eligen desde Glasshouse en un navegador, en Avanzado.",
-  "from": "The time and days are set from Glasshouse in a browser, under Advanced."
- },
- "tv.options.timer.once": {
-  "text": "{time}, una vez",
-  "from": "{time}, once"
- },
- "tv.options.timer.repeats": {
-  "text": "{time}, se repite {days}",
-  "from": "{time}, repeats {days}"
- },
- "tv.options.timer.off": {
-  "text": "Desactivado ({when})",
-  "from": "Off ({when})"
  }
 }

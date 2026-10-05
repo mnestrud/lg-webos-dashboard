@@ -800,9 +800,11 @@ function privacyRows(d) {
       off:  { label: t('common.off', 'Off'), next: 'ads', press: t('tv.privacy.blocking.toAds', 'Press OK for Ads & telemetry'),
               hint: t('pv.adblock.off.detail', 'Nothing is blocked. LG’s advertising and telemetry addresses work as normal.') },
       ads:  { label: t('pv.adblock.ads', 'Ads & telemetry'), next: 'full', press: t('tv.privacy.blocking.toFull', 'Press OK for Everything'),
-              hint: t('tv.privacy.adsTelemetry.hint', 'Blocks advertising, tracking and diagnostics addresses. LG’s app store and software updates still work.') },
+              hint: t('tv.privacy.adsTelemetry.hint', 'Blocks advertising, tracking and diagnostics addresses. LG’s app store and software updates still work.') + ' ' +
+                    t('tv.privacy.blocking.troubleshoot', 'If an app stops working, switch blocking off to check whether it is the cause.') },
       full: { label: t('pv.adblock.full', 'Everything'), next: 'off', press: t('tv.privacy.blocking.toOff', 'Press OK for Off'),
-              hint: t('tv.privacy.everything.hint', 'Also blocks LG’s platform services. Features that rely on them, such as the app store, may stop working.') }
+              hint: t('tv.privacy.everything.hint', 'Also blocks LG’s platform services. The app store, software updates and LG Channels may stop working.') + ' ' +
+                    t('tv.privacy.blocking.troubleshoot', 'If an app stops working, switch blocking off to check whether it is the cause.') }
     };
     var cur = AB[abMode] || AB.off;
     r.push(head(t('tv.privacy.head.adAndTrackerBlocking', 'Ad and tracker blocking')));
@@ -1936,7 +1938,7 @@ function activate() {
         r.value = t('tv.confirm', 'Confirm?');
         r.cls = 'warn';
         r.press = t('tv.privacy.blocking.fullAgain', 'Press OK again for Everything');
-        flash(t('tv.privacy.blocking.fullWarn', 'Everything may stop the app store and software updates working. Press OK again to confirm.'));
+        flash(t('tv.privacy.blocking.fullWarn', 'Everything may stop the app store, software updates and LG Channels working. Press OK again to confirm.'));
         render();
         setTimeout(function () {
           if (r.confirming) {
