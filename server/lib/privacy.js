@@ -457,6 +457,10 @@ function planConsent(key, on, flags, eln) {
       if (!CONSENT_LOCKED[k] || !flags[k]) continue;
       for (i = 0; i < groups[k].length; i++) protectedDocs[groups[k][i]] = true;
     }
+    var docs = (eln && eln.eulaList) || [];
+    for (i = 0; i < docs.length; i++) {
+      if (docs[i].mandatory || docs[i].required) protectedDocs[docs[i].id] = true;
+    }
     for (i = 0; i < need.length; i++) {
       if (!protectedDocs[need[i]]) delete accepted[need[i]];
     }
@@ -893,5 +897,6 @@ module.exports = {
   adBlockHostsTable: adBlockHostsTable,
   CONSENT_LABELS: CONSENT_LABELS,
   CONSENT_LOCKED: CONSENT_LOCKED,
-  CONSENT_GROUPS: CONSENT_GROUPS
+  CONSENT_GROUPS: CONSENT_GROUPS,
+  planConsent: planConsent
 };

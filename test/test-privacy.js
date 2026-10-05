@@ -49,6 +49,23 @@ test('LG Channels is left out of the consents and cannot be written', function (
   });
 });
 
+test('planConsent protects mandatory documents from being unagreed', function () {
+  var flags = { generalTermsAllowed: true, customAdAllowed: true };
+  var eln = {
+    eulaList: [
+      { id: 'S_GEN', title: 'Terms of Use', mandatory: true, accepted: true },
+      { id: 'S_PRV', title: 'Privacy Policy', required: true, accepted: true },
+      { id: 'S_CAD', title: 'Personalized Ads', accepted: true }
+    ]
+  };
+  var plan = privacy.planConsent('customAdAllowed', false, flags, eln);
+  var byId = {};
+  plan.docs.eulaList.forEach(function (d) { byId[d.id] = d.accepted; });
+  assert.strictEqual(byId.S_GEN, true, 'mandatory doc stays accepted');
+  assert.strictEqual(byId.S_PRV, true, 'required doc stays accepted');
+  assert.strictEqual(plan.flags.generalTermsAllowed, true, 'general terms flag stays on');
+});
+
 test('the summary counts what is on, and leaves voice, LG Channels and fixed flags alone', function () {
   var sm = privacy.simpleSummary({
     consentWritable: true,

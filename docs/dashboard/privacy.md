@@ -19,6 +19,14 @@ Two tiers are available:
 
 What ACR collects and what LG Ad Solutions does with it is set out in [What LG's ACR does](../ACR.md).
 
+### Streaming apps and user agreements
+
+Native streaming apps like Netflix, Hulu, Prime Video and Disney+ require the TV's base **Terms of Use and Privacy Policy** to be accepted; webOS will refuse to launch them if those base agreements are withdrawn.
+
+Those base agreements govern platform app execution and DRM playback, not tracking. The actual surveillance (screen content recognition / ACR, ad profiling, data partner sharing, diagnostic uploads and telemetry beacons) is handled by separate optional agreements and background services.
+
+Glasshouse leaves the base terms intact while switching off the tracking and blackholing LG's ad and telemetry servers. This allows native streaming apps to run normally without the TV sending viewing data or ad queries home.
+
 ![Privacy tab: an overview of what is still on, then the ad and telemetry blocker, advertising identifier, the data collection agreements grouped by subject with toggles, and what is running now](../screenshots/privacy.png)
 
 *Privacy controls, data agreements, advertising ID and LG telemetry blocking.*
