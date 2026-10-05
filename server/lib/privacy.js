@@ -16,8 +16,6 @@ var ADBLOCK_ADS = [
   'ibis.lgappstv.com',
   'ibs.lgappstv.com',
   'lgsmartad.com',
-  'rdx.lgtvcommon.com',
-  'aic.lgtvcommon.com',
   'smartclip.com',
   'smartclip-services.com',
   'yumenetworks.com',
@@ -53,18 +51,20 @@ var ADBLOCK_REGIONAL = [
   'rdx2.lgtvsdp.com',
   'ibs.lgappstv.com',
   'ibsstat.lgappstv.com',
-  'cdpbeacon.lgtvcommon.com',
-  'cdpsvc.lgtvcommon.com',
-  'wau.lgtvcommon.com'
+  'cdpbeacon.lgtvcommon.com'
 ];
 var ADBLOCK_REGION_PREFIXES = ['aic', 'eic', 'kic', 'eu'];
 // Until the TV has reported its country, the countries LG is seen using.
 var ADBLOCK_FALLBACK_COUNTRIES = ['us', 'gb', 'au', 'br', 'ca', 'de', 'fr'];
 var COUNTRY_FILE = '/var/lib/tvweb/country';
 
-function adBlockAds() {
+function adBlockPrefixes() {
   var country = (readTrimmed(COUNTRY_FILE) || '').toLowerCase();
-  var prefixes = ADBLOCK_REGION_PREFIXES.concat(/^[a-z]{2}$/.test(country) ? [country] : ADBLOCK_FALLBACK_COUNTRIES);
+  return ADBLOCK_REGION_PREFIXES.concat(/^[a-z]{2}$/.test(country) ? [country] : ADBLOCK_FALLBACK_COUNTRIES);
+}
+
+function adBlockAds() {
+  var prefixes = adBlockPrefixes();
   var list = ADBLOCK_ADS.slice();
   ADBLOCK_REGIONAL.forEach(function (name) {
     [name].concat(prefixes.map(function (p) { return p + '.' + name; }))
@@ -84,6 +84,20 @@ var ADBLOCK_PLATFORM = [
   'eu.nextlgsdp.com',
   'ngfts.lge.com',
   'aic-ngfts.lge.com'
+];
+
+/*
+ * LG Channels (FAST streaming) and Home rely on LG's common service endpoints
+ * (aic.lgtvcommon.com, cdpsvc, rdx, wau) for program guide (EPG) metadata and
+ * stream authentication. They belong in the Everything tier (ADBLOCK_PLATFORM)
+ * rather than Ads & Telemetry so normal TV viewing and streaming are not
+ * broken (#467).
+ */
+var ADBLOCK_PLATFORM_REGIONAL = [
+  'lgtvcommon.com',
+  'cdpsvc.lgtvcommon.com',
+  'wau.lgtvcommon.com',
+  'rdx.lgtvcommon.com'
 ];
 
 
@@ -238,7 +252,12 @@ function storeHost() {
 }
 
 function adBlockPlatform() {
+  var prefixes = adBlockPrefixes();
   var list = ADBLOCK_PLATFORM.slice();
+  ADBLOCK_PLATFORM_REGIONAL.forEach(function (name) {
+    [name].concat(prefixes.map(function (p) { return p + '.' + name; }))
+      .forEach(function (h) { if (list.indexOf(h) === -1) list.push(h); });
+  });
   var host = storeHost();
   if (host && list.indexOf(host) === -1) list.push(host);
   return list;
@@ -246,7 +265,12 @@ function adBlockPlatform() {
 
 function adBlockList(mode) {
   if (mode === 'off') return [];
-  return mode === 'full' ? adBlockAds().concat(adBlockPlatform()) : adBlockAds();
+  if (mode !== 'full') return adBlockAds();
+  var list = adBlockAds();
+  adBlockPlatform().forEach(function (h) {
+    if (list.indexOf(h) === -1) list.push(h);
+  });
+  return list;
 }
 
 // Whether this server's table is over /etc/hosts, for ads, updates or both.
@@ -864,6 +888,8 @@ module.exports = {
   clearCache: clearCache,
   ADBLOCK_ADS: ADBLOCK_ADS,
   ADBLOCK_PLATFORM: ADBLOCK_PLATFORM,
+  ADBLOCK_REGIONAL: ADBLOCK_REGIONAL,
+  ADBLOCK_PLATFORM_REGIONAL: ADBLOCK_PLATFORM_REGIONAL,
   adBlockHostsTable: adBlockHostsTable,
   CONSENT_LABELS: CONSENT_LABELS,
   CONSENT_LOCKED: CONSENT_LOCKED,

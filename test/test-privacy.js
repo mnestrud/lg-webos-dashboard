@@ -118,6 +118,31 @@ test("they are carried over when it is, so this table does not undo it", functio
   }
 });
 
+test('LG Channels endpoints are spared in ads mode and blocked in full mode', function () {
+  var adsTable = privacy.adBlockHostsTable('ads');
+  var fullTable = privacy.adBlockHostsTable('full');
+  var channelHosts = [
+    'aic.lgtvcommon.com',
+    'cdpsvc.lgtvcommon.com',
+    'aic.cdpsvc.lgtvcommon.com',
+    'rdx.lgtvcommon.com',
+    'wau.lgtvcommon.com'
+  ];
+  channelHosts.forEach(function (host) {
+    assert.ok(!sinkholed(adsTable, host), host + ' should not be blocked in ads mode');
+    assert.ok(sinkholed(fullTable, host), host + ' should be blocked in full mode');
+  });
+  var adHosts = [
+    'ad.lgsmartad.com',
+    'prov-lg.alphonso.tv',
+    'cdpbeacon.lgtvcommon.com',
+    'aic.cdpbeacon.lgtvcommon.com'
+  ];
+  adHosts.forEach(function (host) {
+    assert.ok(sinkholed(adsTable, host), host + ' should still be blocked in ads mode');
+  });
+});
+
 var failures = 0;
 tests.forEach(function (t) {
   try {
