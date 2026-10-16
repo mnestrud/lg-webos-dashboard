@@ -8,6 +8,8 @@ It shows whether the content-recognition engine is running and sampling frames, 
 
 Most data agreements can be switched off from here (persisting across reboots), and the advertising ID can be reset and its cookies cleared. Acceptance of new terms is left to the TV's own menus.
 
+On TVs with a microphone switch on the set itself, such as a C5, **What's running now** shows whether that switch is on. It is read from the TV and can only be changed at the switch.
+
 LG's on-screen ads and promotions have their own switches: ads in the screen saver, Sponsored tiles and recommendations on the Home screen, ads while watching, and Smart Tips. Each shows only on TVs that have it.
 
 The ad & telemetry blocker blackholes LG's tracking, ad and ACR endpoints on the TV itself, by bind-mounting a hosts table over `/etc/hosts`, and is restored on boot.

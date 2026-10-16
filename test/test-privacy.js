@@ -424,6 +424,58 @@ test('removing the list puts the tier\'s own back', function () {
   }
 });
 
+// Answers as the TV would: the model setting from configd, the switch from
+// the voice service, or "Service does not exist" where there is none.
+function micTv(support, status) {
+  var asked = [];
+  privacy.init({
+    luna: function (uri, params, cb) {
+      asked.push(uri);
+      if (uri === 'com.webos.service.voiceinput.sound/getMicSwitchStatus') {
+        return cb(status ? { returnValue: true, micSwitchStatus: status }
+                         : { returnValue: false, errorText: 'Service does not exist: com.webos.service.voiceinput.sound.' });
+      }
+      cb({ returnValue: true });
+    },
+    lunaCached: function (uri, params, ttl, cb) {
+      asked.push(uri);
+      var configs = {};
+      if (support) configs['tv.model.supportFarFieldVoice'] = support;
+      cb({ returnValue: true, configs: configs });
+    }
+  });
+  return asked;
+}
+
+test('the microphone switch is read on a TV that has one', function () {
+  micTv('on with switch', 'high');
+  var got;
+  privacy.readMicSwitch(function (m) { got = m; });
+  assert.strictEqual(got.on, true);
+  assert.ok(got.label && got.detail);
+  micTv('on with switch', 'low');
+  privacy.readMicSwitch(function (m) { got = m; });
+  assert.strictEqual(got.on, false);
+});
+
+test('a TV without the switch shows nothing and is not asked for one', function () {
+  var asked = micTv(null, null);
+  var got = 'unset';
+  privacy.readMicSwitch(function (m) { got = m; });
+  assert.strictEqual(got, null);
+  assert.strictEqual(asked.indexOf('com.webos.service.voiceinput.sound/getMicSwitchStatus'), -1);
+});
+
+test('an answer that is not high or low shows nothing', function () {
+  micTv('on with switch', null);
+  var got = 'unset';
+  privacy.readMicSwitch(function (m) { got = m; });
+  assert.strictEqual(got, null);
+  micTv('on with switch', 'unknown');
+  privacy.readMicSwitch(function (m) { got = m; });
+  assert.strictEqual(got, null);
+});
+
 var failures = 0;
 tests.forEach(function (t) {
   try {

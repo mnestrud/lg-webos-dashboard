@@ -2599,6 +2599,10 @@
   "text": "Se lee en la misma llamada, así que aquí se desconoce.",
   "from": "Read from the same call, so it is unknown here."
  },
+ "pv.microphone": {
+  "text": "Micrófono",
+  "from": "Microphone"
+ },
  "pv.notReadable": {
   "text": "No legible",
   "from": "Not readable"
@@ -4518,6 +4522,14 @@
  "srv.privacy.lmt.detail": {
   "text": "Activado, se pide a las apps que no usen este ID para perfilarte.",
   "from": "When on, apps are asked not to use this ID to profile you."
+ },
+ "srv.privacy.mic": {
+  "text": "Interruptor del micrófono",
+  "from": "Microphone switch"
+ },
+ "srv.privacy.mic.detail": {
+  "text": "El interruptor del propio televisor. Con él apagado, la voz manos libres del televisor deja de escuchar.",
+  "from": "The switch on the TV itself. With it off, the TV’s hands-free voice stops listening."
  },
  "srv.processes.failed": {
   "text": "no se pudo leer la lista de procesos",

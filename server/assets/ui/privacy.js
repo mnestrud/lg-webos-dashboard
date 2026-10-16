@@ -103,6 +103,13 @@ async function loadPrivacy() {
       pvRow(esc(t('pv.capture', 'Screen capturing')), esc(t('pv.capture.desc', 'Sampling frames from the screen for recognition.')),
           `<span class="pill ${a.capturing ? 'warn' : 'good'}">${esc(a.capturing ? t('pv.capturing', 'Capturing') : t('pv.stopped', 'Stopped'))}</span>`);
 
+    // The switch on the TV itself, on the models that have one. Off is the
+    // private setting, as everywhere in this panel.
+    const mic = d.microphone;
+    q('pv-mic-grp').hidden = !mic;
+    q('pv-mic').innerHTML = mic ? pvRow(esc(mic.label), esc(mic.detail),
+      `<span class="pill ${mic.on ? 'warn' : 'good'}">${esc(mic.on ? t('common.on', 'On') : t('common.off', 'Off'))}</span>`) : '';
+
     // advertising id
     const ad = d.advertisingId || {};
     // The identifier itself is never sent to the browser, so it cannot end up

@@ -1019,6 +1019,30 @@ function runningDaemons(cb) {
   });
 }
 
+/*
+ * The microphone switch on the TV itself, read where the model has one: a C5
+ * (webOS 10.3.1) reports "on with switch" and reads the switch as a GPIO
+ * level, "high" on and "low" off; a CX (webOS 5.6.2) has neither the setting
+ * nor the service. null when there is nothing to show.
+ */
+function readMicSwitch(cb) {
+  var lunaFn = lunaCached || function (uri, params, ttl, done) { luna(uri, params, done); };
+  lunaFn('com.webos.service.config/getConfigs', { configNames: ['tv.model.supportFarFieldVoice'] }, 3600000,
+         function (c) {
+    var support = String((c && c.configs && c.configs['tv.model.supportFarFieldVoice']) || '');
+    if (!/with switch/.test(support)) return cb(null);
+    luna('com.webos.service.voiceinput.sound/getMicSwitchStatus', {}, function (r) {
+      var st = r && r.returnValue !== false && r.micSwitchStatus;
+      if (st !== 'high' && st !== 'low') return cb(null);
+      cb({
+        label: msg('srv.privacy.mic', 'Microphone switch'),
+        detail: msg('srv.privacy.mic.detail', 'The switch on the TV itself. With it off, the TV’s hands-free voice stops listening.'),
+        on: st === 'high'
+      });
+    });
+  });
+}
+
 function collectPrivacy(cb) {
   var now = Date.now();
   if (cachedPrivacy && (now - lastPrivacyCheck < 20000)) return cb(cachedPrivacy);
@@ -1062,12 +1086,15 @@ function collectPrivacy(cb) {
               platform: adBlockPlatform(),
               custom: customSummary()
             };
-            lgSettingsModule.collect('promotions', function (ls) {
-              out.lgSettings = ls.rows;
-              out.simple = simpleSummary(out);
-              cachedPrivacy = out;
-              lastPrivacyCheck = Date.now();
-              cb(out);
+            readMicSwitch(function (mic) {
+              if (mic) out.microphone = mic;
+              lgSettingsModule.collect('promotions', function (ls) {
+                out.lgSettings = ls.rows;
+                out.simple = simpleSummary(out);
+                cachedPrivacy = out;
+                lastPrivacyCheck = Date.now();
+                cb(out);
+              });
             });
           });
         });
@@ -1282,6 +1309,7 @@ module.exports = {
   setLimitTracking: setLimitTracking,
   clearAdCookies: clearAdCookies,
   collectPrivacy: collectPrivacy,
+  readMicSwitch: readMicSwitch,
   simpleSummary: simpleSummary,
   setConsent: setConsent,
   acrConsentKeys: acrConsentKeys,
