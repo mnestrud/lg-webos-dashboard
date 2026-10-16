@@ -493,42 +493,135 @@ suspend request with `rebootToSuspend`, so the TV restarted with
 `PowerOnReason: rebootByFault` at its next standby. It happened both times
 `ls-monitor` was run, and not without it.
 
-## Terms of Use withdrawn (webOS 5.6.2, CX)
+## Consent flags on a CX and a C5 (webOS 5.6.2 and 10.3.1)
 
-With the Terms of Use or the Privacy Policy not accepted, the TV sets
-`generalTermsAllowed` off at its next boot, and then every app launch
-(YouTube, Netflix, the Content Store) opened `com.webos.app.eula` instead,
-and the Home key asked whether to end User Agreements. With both accepted but
-the flag written off, launches were blocked at once. Accepting both again
-opened the apps without a restart. So the gate is the flag, and the TV only
-sets it at boot when both documents are accepted.
+How the flags are rebuilt from the agreement documents is described in
+IMPLEMENTATION.md; this is what two more firmwares showed.
 
-## The microphone switch (webOS 10.3.1, C5)
+- **Which flags exist.** Two CX on the same firmware and a C5 all have
+  `acrAdAllowed`, `acrAllowed`, `acrGdprAllowed`, `acrOnAllowed`,
+  `additional1Allowed`, `additionalDataAllowed`, `cookiesAllowed`,
+  `customAdAllowed`, `customadsAllowed`, `generalTermsAllowed`,
+  `marketingOnAllowed`, `networkAllowed`, `remoteDiagAllowed`,
+  `thirdPartySharingAllowed`, `voiceAllowed` and `voice2Allowed`. Only the C5
+  has `additional2Allowed` and `additional3Allowed`; only the CX have
+  `takeOnAllowed`. `shoppingOnAllowed` was on the C5 and one of the two CX,
+  so the same firmware can differ.
+- **What rests on what.** `generalTermsAllowed` rests on `S_SVC` (Terms of
+  Use) and `S_PRG` (Privacy Policy); on the C5 so does `additional3Allowed`.
+  `networkAllowed` rests on no document.
+- **A flag written off with its documents left accepted comes back at boot.**
+  With every flag written off on its own, a reboot of all three put
+  `generalTermsAllowed` back on, and `additional3Allowed` on the C5. All the
+  others, `networkAllowed` among them, stayed off.
+- **`networkAllowed` off** stops nothing visible: on a CX with it off, YouTube
+  and Netflix opened to their profile screens and the Content Store listed
+  apps, with some pictures missing. It held through a reboot on all three.
+- **The Terms gate (CX).** With `S_SVC`, `S_PRG` or both withdrawn, the TV
+  set `generalTermsAllowed` off at its next boot, and then YouTube, Netflix
+  and the Content Store each opened `com.webos.app.eula` (LG's User
+  Agreements screen) instead, on six of nine launches; the Home key on it
+  asked whether to end User Agreements. With both accepted and the flag
+  written off, launches were blocked at once. Accepting both again and
+  setting the flag opened the apps without a restart. So the gate is the
+  flag, which the TV sets at boot only when both documents are accepted.
+  `chpAllowed` went off with the terms and stayed off after they came back.
+- `general.launchEulaByHome` was already false on a CX and the C5; on the C5
+  only the first-use app names it. Not tried.
 
-`voiceinput.sound/getMicSwitchStatus` reads the switch on the TV as a GPIO
-level: `high` is on, `low` off. Flipping it logged "MIC SWITCH Status
-Changed: 1 -> 0", took ThinQ's voice activation off with reason "Mic Switch",
-and showed a toast saying the microphone is off.
+## Privacy settings and what reads them (webOS 10.3.1, C5)
 
-## Settings with no visible effect
+Readers were found by searching `/usr` and `/etc` for each key, so a reader
+that builds the name at run time would be missed.
 
-Read on a CX (5.6.2) and a C5 (10.3.1); nothing outside LG's own settings
-definitions was found reading these:
+| Key | C5 value | Read by | Effect found |
+|---|---|---|---|
+| `option.dbgLogUpload` | true | `uploadd`, `PmLogDaemon` | Not in LG's menus (`ui.visible: false`). Once seen back on after a boot, with `uploadd` running 73 s in although its unit had been masked under `/run`. |
+| `option.faultLogUpload` | false | `uploadd`, `remotediag`, `prosense`, `PmLogDaemon`, Settings, first use | Its description limits it to `KOR, USA`. |
+| `option.usageCare` | true | Settings only | The Usage Care menu entry, which opens Family Care. Family Care's own code never reads it; its screen-time lock reads the `parentalControl` keys, and it has no network code. |
+| `option.thirdPartyCookie` | `on` | the HbbTV plugin of WebAppMgr, Settings | HbbTV only. Values `on`, `off`, `onByUser`, `offByUser`. |
+| `general.voiceLongDistance` | on | `voiceinput` | Off or on, no capture device was opened in Active or Active Standby; detection may run on the sound chip, so not settled. |
+| `option.watchedListCollection` | `on` | none found (only `tvdataexchanger/spec.xml` names it) | Unknown. |
 
-- `option.webOSPromotionVideo` (on/off), on both TVs.
-- `general.homeAutoLaunchMode` (`full`) on the CX.
-- `watchedListCollection`, on the C5.
+The CX has `voiceLongDistance` and `watchedListCollection` but none of the
+other four. On both, `general.lmt` (Limit Ad Tracking) read on; the
+advertising ID read `limitTracking: true` only after a reboot, while the
+advertising service had not answered before it.
 
-And some that have a reader but no effect found:
+Others with no effect found:
 
+- `option.webOSPromotionVideo` (on/off): nothing outside LG's settings
+  definitions names it, on either TV.
+- `general.homeAutoLaunchMode` (`full`) on the CX: no reader found.
 - `general.powerOnScreen` takes only `todays` and `liveTv`, and only the
   broadcast service (`legacy-broadcast`) reads it.
-- `option.usageCare` is only the Usage Care entry in LG's settings menu;
-  Family Care's screen-time lock reads the `parentalControl` keys instead.
-- `voiceLongDistance` off or on opened no capture device in Active or Active
-  Standby on the C5; detection may run on the sound chip, so this is not
-  settled.
 - `hotelMode.enablePowerOnDefaultVolume` and `powerOnDefaultVolume` are set
   by LG's installation menu together with hotel mode itself. On the C5
   `audiod` reads the first; on the CX nothing outside that menu does. Not
   tried.
+
+## LG host names in the firmware (webOS 5.6.2, CX; webOS 10.3.1, C5)
+
+A search of `/usr` and `/etc` for names under `lgtvcommon`, `nextlgsdp`,
+`lgtviot`, `lgthinq`, `ngfts`, `wiselg`, `lggalleryplus` and `lgsmartad`. None
+of these was seen in a network capture; they are only what the firmware can
+name.
+
+- **Region prefixes.** Many names appear bare and with `aic.`, `eic.`,
+  `eu.`, `kic.` and `us.` in front (`cdpbeacon`, `cdpsvc` and `wau` under
+  `lgtvcommon.com`, `info.lgsmartad.com`), or as `aic-`, `eic-`, `kic-` and
+  `qt2-` forms (`ngfts.lge.com`, the `lgthinq.com` services). A hosts entry
+  blocks only the exact name, so the prefixed forms need their own lines.
+- **Names held with a leading dot**: `.api.lgtviot.com` and `.lgtviot.com` on
+  the CX, `.lgtviot.com`, `.buddy.lgtviot.com` and `.pnv.lgtvcommon.com` on the
+  C5, which suggests the firmware puts a prefix in front at run time. Not
+  confirmed.
+- **CX only**: `fooddelivery`, `cpv` and `qt2-kic.imagesvc` under
+  `lgtvcommon.com`. **C5 only**: the `nextlgsdp.com` names (`ibs`, `ibsstat`,
+  `rdx2`, `qt2-US`), `dev-ruc-ngfts.tv.wiselg.com`, and `cpauth`,
+  `qcardservice`, `rdl`, `wiseconfig`, `wiseresource` and `videoads` under
+  `lgtvcommon.com`.
+- **Both**: `nudge`, `recommend`, `rdx`, `homeprv`, `netflixvoice` and
+  `videoacr` under `lgtvcommon.com`; `api`, `push` and `sports` under
+  `lgtviot.com`; `ad`, `info` under `lgsmartad.com`.
+- No `lggalleryplus.com` in either.
+
+## ACR on a CX (webOS 5.6.2)
+
+- **`acr2` starts on demand.** Its D-Bus service file is `Type=dynamic`, so
+  any call to `com.webos.service.acr`, such as a status query, starts it. A
+  running `acr2` is not a sign ACR is on. Idle, it used 0.08 s of CPU in about
+  15 minutes, 3.5 MB, and only bus sockets, with `libvtcapture` mapped and the
+  Alphonso library (`libalphonsosolution.so`) not.
+- **`/tmp/acr.xml` is a downloaded configuration**, not a switch. Its strings
+  in `acr2` are "[Configuration] Initialize : downloading config file", with
+  `/mnt/lg/cmn_data/acr.xml` as a fallback that does not exist. On a CX and
+  the C5 it read `ACR_On="true"`, audio capture and `send_data` true while
+  ACR reported itself stopped. Rewritten to false, it was true again about
+  30 s later and stayed false after a second rewrite; what wrote it back was
+  not found. It was gone after a reboot on the CX, and still there on the C5.
+- **ACR switched on** (`livePlus` on, `acrOnAllowed` on) changed nothing in
+  3 minutes: no Alphonso library loaded, `getACRSolutionStatus` false,
+  capture stopped, no network sockets, no `/tmp/acr.xml`. No input had a
+  signal.
+- **Why it went no further:** traced over a restart of `acr2`, it reads the
+  country, `eulaStatus`, `livePlus`, the device name, sdx `getServer`
+  (Production) and `getPublishFlag` (true), then asks
+  `com.webos.service.sdx/getDeviceAuthenticationStatus`, gets
+  `isDeviceAuthenticated: false, provisioningCompleted: false`, and stops.
+  Whether that was the network consent being off, the hosts block, or both
+  was not tested.
+- `/etc/pmlog.d/acr.conf` points the `acr` context at `/var/log/acr.log`,
+  which is never created; even at debug level nothing reached
+  `/var/log/messages`.
+
+## The microphone switch (webOS 10.3.1, C5)
+
+The C5 has a far-field microphone (`tv.model.supportFarFieldVoice`: "on with
+switch"; `WoV PDM Mic` on ALSA card 1) and a switch for it on the TV.
+`voiceinput.sound/getMicSwitchStatus` reads the switch as a GPIO level:
+`high` is on, `low` off. Flipping it off logged "MIC SWITCH Status Changed:
+1 -> 0", took ThinQ's voice activation off with reason "Mic Switch", and
+showed a toast saying the microphone is off. Before the flip, in Active
+Standby, voice activation was already off with reason `tvPowerState`, so
+wake-word listening does not run in standby.
