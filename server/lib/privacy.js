@@ -1157,6 +1157,12 @@ function simpleSummary(p) {
     { id: 'reports', name: msg('srv.privacy.area.reports', 'Usage reports'), detail: msg('srv.privacy.area.reports.detail', 'Usage and diagnostic reports sent to LG, and data passed to other companies.'), items: reports },
     { id: 'onScreen', name: msg('srv.privacy.area.onScreen', 'LG ads on screen'), detail: msg('srv.privacy.area.onScreen.detail', 'Adverts, sponsored tiles and tips that LG shows on the TV.'), items: onScreen }
   ];
+  // The switch on the TV itself, on models that have one. It has no items:
+  // nothing here can move it, so Switch it all off and the count leave it.
+  if (p.microphone) {
+    areas.push({ id: 'microphone', name: msg('srv.privacy.area.microphone', 'Microphone'),
+                 detail: p.microphone.detail, items: [], switchOn: p.microphone.on });
+  }
   var total = 0;
   areas.forEach(function (a) { total += a.items.length; });
   var kept = flags.filter(function (f) {

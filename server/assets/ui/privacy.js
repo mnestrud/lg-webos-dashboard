@@ -33,6 +33,9 @@ function pvRow(name, detail, pillHtml) {
  * so this and the TV dashboard count the same things; the rest of the tab
  * sits under Advanced, unchanged.
  */
+const PS_MIC_ICON = '<svg class="ps-mic-i" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/>' +
+  '<path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>';
+
 function renderSimple(d) {
   const sm = d.simple;
   q('ps').hidden = !sm;
@@ -45,6 +48,16 @@ function renderSimple(d) {
     ? t('pv.allOff.hint', 'Switching it all off includes blocking LG\u2019s ad and tracking servers. If an app stops working afterwards, switch the blocker off under Advanced.')
     : t('pv.allOff.watch', 'If an LG update switches anything back on, it shows here.');
   q('ps-areas').innerHTML = sm.areas.map(a => {
+    // The microphone switch is on the TV, not here, so it reads out on or off
+    // and says where to change it, in a panel of its own.
+    if (a.id === 'microphone') {
+      const on = !!a.switchOn;
+      return `<div class="ps-area ps-mic${on ? ' on' : ''}">` +
+        `<span class="ps-st${on ? ' warn' : ''}">${esc(on ? t('common.on', 'On') : t('common.off', 'Off'))}</span>` +
+        `<div class="n">${PS_MIC_ICON}${esc(a.name)}</div><div class="d">${esc(a.detail)}</div>` +
+        (on ? `<div class="on"><b>${esc(t('pv.mic.atSwitch', 'Only the switch on the TV turns it off.'))}</b></div>` : '') +
+        `</div>`;
+    }
     const n = a.items.length;
     return `<div class="ps-area">` +
       `<span class="ps-st${n ? ' warn' : ''}">${esc(n ? t('pv.areaOn', '{n} on', { n }) : t('common.off', 'Off'))}</span>` +
@@ -102,13 +115,6 @@ async function loadPrivacy() {
           `<span class="pill ${a.active ? 'warn' : 'good'}">${esc(a.active ? t('pv.running', 'Running') : t('pv.notRunning', 'Not running'))}</span>`) +
       pvRow(esc(t('pv.capture', 'Screen capturing')), esc(t('pv.capture.desc', 'Sampling frames from the screen for recognition.')),
           `<span class="pill ${a.capturing ? 'warn' : 'good'}">${esc(a.capturing ? t('pv.capturing', 'Capturing') : t('pv.stopped', 'Stopped'))}</span>`);
-
-    // The switch on the TV itself, on the models that have one. Off is the
-    // private setting, as everywhere in this panel.
-    const mic = d.microphone;
-    q('pv-mic-grp').hidden = !mic;
-    q('pv-mic').innerHTML = mic ? pvRow(esc(mic.label), esc(mic.detail),
-      `<span class="pill ${mic.on ? 'warn' : 'good'}">${esc(mic.on ? t('common.on', 'On') : t('common.off', 'Off'))}</span>`) : '';
 
     // advertising id
     const ad = d.advertisingId || {};

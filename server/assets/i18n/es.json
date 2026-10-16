@@ -2599,9 +2599,9 @@
   "text": "Se lee en la misma llamada, así que aquí se desconoce.",
   "from": "Read from the same call, so it is unknown here."
  },
- "pv.microphone": {
-  "text": "Micrófono",
-  "from": "Microphone"
+ "pv.mic.atSwitch": {
+  "text": "Solo el interruptor del televisor lo apaga.",
+  "from": "Only the switch on the TV turns it off."
  },
  "pv.notReadable": {
   "text": "No legible",
@@ -4474,6 +4474,10 @@
  "srv.privacy.area.ads.detail": {
   "text": "Anunciantes que rastrean la TV entre apps para dirigirte anuncios.",
   "from": "Advertisers tracking the TV across apps, to target ads at you."
+ },
+ "srv.privacy.area.microphone": {
+  "text": "Micrófono",
+  "from": "Microphone"
  },
  "srv.privacy.area.onScreen": {
   "text": "Anuncios de LG en pantalla",

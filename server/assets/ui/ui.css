@@ -859,6 +859,18 @@ button.pill.flash.idle[disabled]:hover{color:var(--w60);border-color:var(--edge)
 .ps-area .d{font-size:14px;line-height:1.5;color:var(--w60);max-width:38ch}
 .ps-area .on{font-size:14px;line-height:1.5;color:var(--w80);margin-top:10px;max-width:38ch}
 .ps-area .on b{font-weight:500;color:var(--cand)}
+/* The microphone switch is the one area set at the TV itself, so it is drawn
+   apart: a full-width panel under the other four, tinted, with a rule in its
+   state's color. The rgba tint is for browsers without color-mix. */
+.ps-area.ps-mic{grid-column:1/-1;margin-top:10px;border-top:3px solid var(--green);
+  padding:20px 24px 22px;border-radius:0 0 14px 14px;background:rgba(30,193,95,.10);
+  background:color-mix(in srgb,var(--green) 10%,transparent)}
+.ps-area.ps-mic.on{border-top-color:var(--cand);background:rgba(255,152,0,.12);
+  background:color-mix(in srgb,var(--cand) 12%,transparent)}
+.ps-area.ps-mic .n{font-size:clamp(22px,2.4vw,26px);display:flex;align-items:center}
+.ps-area.ps-mic .d,.ps-area.ps-mic .on{max-width:60ch}
+.ps-mic-i{width:28px;height:28px;margin-right:12px;flex:none;fill:none;stroke:currentColor;
+  stroke-width:1.6;stroke-linecap:round}
 .ps-state{display:flex;gap:16px;align-items:center;margin-bottom:10px}
 .ps-dot{width:14px;height:14px;border-radius:50%;flex:none;background:var(--w25);
   box-shadow:0 0 0 6px color-mix(in srgb,var(--w25) 18%,transparent)}

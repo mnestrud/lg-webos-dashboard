@@ -885,6 +885,12 @@ function privacyRows(d) {
                             : t('pv.allOff.watch', 'If an LG update switches anything back on, it shows here.') });
     for (var sa = 0; sa < sm.areas.length; sa++) {
       var ar = sm.areas[sa];
+      if (ar.id === 'microphone') {
+        r.push({ label: ar.name, value: ar.switchOn ? t('common.on', 'On') : t('common.off', 'Off'),
+                 cls: 'st ' + (ar.switchOn ? 'hold' : 'good'),
+                 hint: ar.detail + (ar.switchOn ? ' ' + t('pv.mic.atSwitch', 'Only the switch on the TV turns it off.') : '') });
+        continue;
+      }
       var still = [];
       for (var si = 0; si < ar.items.length; si++) still.push(ar.items[si].label);
       // ar.name and ar.detail are the server's own words, in English.

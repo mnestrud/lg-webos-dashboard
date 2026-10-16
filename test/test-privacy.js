@@ -476,6 +476,20 @@ test('an answer that is not high or low shows nothing', function () {
   assert.strictEqual(got, null);
 });
 
+test('the microphone is a fifth area in the summary, with nothing for Switch it all off', function () {
+  var base = { consentWritable: true, consent: { known: [], other: [] }, adblock: { mode: 'ads' } };
+  var sm = privacy.simpleSummary(base);
+  assert.strictEqual(sm.areas.length, 4, 'no area on a TV without the switch');
+  var on = privacy.simpleSummary(Object.assign({ microphone: { on: true, detail: 'd' } }, base));
+  var mic = on.areas[4];
+  assert.strictEqual(mic.id, 'microphone');
+  assert.strictEqual(mic.switchOn, true);
+  assert.deepEqual(mic.items, []);
+  assert.strictEqual(on.total, sm.total, 'not counted as something to switch off');
+  var off = privacy.simpleSummary(Object.assign({ microphone: { on: false, detail: 'd' } }, base));
+  assert.strictEqual(off.areas[4].switchOn, false);
+});
+
 var failures = 0;
 tests.forEach(function (t) {
   try {
