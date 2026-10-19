@@ -71,6 +71,18 @@ async function startServer() {
   fs.writeFileSync(cfg, JSON.stringify({ port, host: '127.0.0.1' }));
   const fake = path.join(ROOT, 'test', 'mocks', 'fake-luna-send.js');
   fs.chmodSync(fake, 0o755);
+  // Each app the fake TV lists gets its folder, with an appinfo.json and an
+  // icon, so the dashboards' icons load as on a TV instead of answering 404.
+  const listed = JSON.parse(child.execFileSync(process.execPath,
+    [fake, '-n', '1', 'luna://com.webos.applicationManager/listApps', '{}'],
+    { encoding: 'utf8', env: Object.assign({}, process.env, { FAKE_LUNA_CHAOS: '' }) }));
+  for (const app of listed.apps || []) {
+    if (!app.folderPath) continue;
+    const dir = path.join(root, app.folderPath);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'appinfo.json'), JSON.stringify({ id: app.id, title: app.title, icon: 'icon.png' }));
+    fs.copyFileSync(path.join(ASSETS, 'dashboard-app/assets/icon80.png'), path.join(dir, 'icon.png'));
+  }
   let out = '';
   const srv = child.spawn(process.execPath, [path.join(ROOT, 'test', 'mocks', 'boot-server.js'), '--config', cfg], {
     env: Object.assign({}, process.env, { FAKE_ROOT: root, TVWEB_LUNA_SEND: fake })
