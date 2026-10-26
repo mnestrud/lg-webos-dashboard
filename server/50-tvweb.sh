@@ -102,6 +102,103 @@ sam_reports() {
   return 1
 }
 
+webos_major=$(sed -n 's/.*webOS[^0-9]*\([0-9][0-9]*\)\..*/\1/p' /etc/issue 2>/dev/null | head -n 1)
+# A G5 (webOS 10.3.1) has no /etc/issue; "Rockhopper release 10.3.1-3006" is
+# in starfish-release, as lib/telemetry.js reads it.
+[ -n "$webos_major" ] ||
+  webos_major=$(sed -n 's/.*release[^0-9]*\([0-9][0-9]*\)\..*/\1/p' /etc/starfish-release 2>/dev/null | head -n 1)
+
+# Glasshouse Home in LG's Home's place (lib/home-takeover.js), first of the
+# mounts, as anything that opens Home before it opens LG's. LG's Home may have
+# started by now, in the background, on the empty layout the server left it on
+# webOS 9, so anything opening Home before now showed black; once sam
+# reads the mounted manifest it is stopped, and the TV opens Glasshouse Home's
+# page as Home from then on. Where sam does not take it, LG's files go back
+# under it, its own layout too, and it restarts on that. The server does the
+# same at its start, for a hook that did not run.
+# On webOS 10 and 11 LG's Home is a Flutter app run as
+# "flutter-client -i com.webos.app.home"; webOS 11 only with
+# allowExperimentalHome in config.json. sam ignores the nudge there (above), so
+# the app is reread with a block and release first.
+homeapp=/usr/palm/applications/com.webos.app.home
+homestage=/var/lib/tvweb/home-takeover
+home_os=0
+[ "$webos_major" = "9" ] && home_os=1
+[ "$webos_major" = "10" ] && home_os=1
+if [ "$webos_major" = "11" ]; then
+  grep -q '"allowExperimentalHome"[[:space:]]*:[[:space:]]*true' /var/lib/tvweb/config.json 2>/dev/null && home_os=1
+fi
+# A block and release cut short leaves Home blocked across boots, as for the
+# screen saver below, so it is released at every boot where it is ever blocked.
+if [ "$webos_major" = "10" ] || [ "$webos_major" = "11" ]; then
+  luna-send -n 1 luna://com.webos.applicationManager/releaseBlockSystemApp '{"id":"com.webos.app.home"}' >/dev/null 2>&1 || true
+fi
+lg_home_pids() {
+  pidof com.webos.app.home
+  for cmd in /proc/[0-9]*/cmdline; do
+    { tr '\0' ' ' < "$cmd"; } 2>/dev/null | grep -q '^/usr/bin/flutter-client .*-i com\.webos\.app\.home ' || continue
+    pid=${cmd#/proc/}
+    echo "${pid%/cmdline}"
+  done
+}
+# The server switches LG's Home auto launch off, so the TV starts on its last
+# input rather than on LG's Home, and keeps the owner's value as lgAutoLaunch in
+# home.json (lib/home.js). Where it was on, Glasshouse Home opens instead, as
+# LG's would have: after a power-on LG opens Home for, and only while the input
+# the TV started on is still in front, so an input or app chosen since stays.
+# bootd logs the app it put in front as "'<id>' is foreground" (a G5, webOS
+# 10.3.1); without that line nothing is opened.
+home_open_at_boot() {
+  grep -q '"lgAutoLaunch"[[:space:]]*:[[:space:]]*"on"' /var/lib/tvweb/home.json 2>/dev/null || return 0
+  reason=$(luna-send -n 1 luna://com.webos.service.tvpower/power/getPowerOnReason '{}' 2>/dev/null |
+    sed -n 's/.*"reason": *"\([^"]*\)".*/\1/p')
+  reasons=$(luna-send -n 1 luna://com.webos.service.config/getConfigs \
+    '{"configNames":["com.webos.service.tvpower.fullHomeBootingPowerOnReasons"]}' 2>/dev/null | tr -d '\n' |
+    sed -n 's/.*fullHomeBootingPowerOnReasons": *\(\[[^]]*\]\).*/\1/p')
+  # LG's list on a G5; the same where a TV has none.
+  [ -n "$reasons" ] || reasons='["aiKey","lastPowerOn","localKey","remoteKey","seniorHelp"]'
+  case "$reasons" in
+    *"\"$reason\""*) ;;
+    *) echo "$(date): Glasshouse Home not opened: power-on reason ${reason:-unknown}"; return 0 ;;
+  esac
+  boot_app=$(sed -n "s/.*BootSequencer) '\([^']*\)' is foreground.*/\1/p" /var/log/bootd.log 2>/dev/null | head -n 1)
+  front=$(luna-send -n 1 luna://com.webos.applicationManager/getForegroundAppInfo '{}' 2>/dev/null |
+    sed -n 's/.*"appId": *"\([^"]*\)".*/\1/p')
+  case "$boot_app" in
+    com.webos.app.livetv|com.webos.app.hdmi[0-9]|com.webos.app.av[0-9]|com.webos.app.comp[0-9]) ;;
+    *) echo "$(date): Glasshouse Home not opened: the TV started on ${boot_app:-nothing logged}"; return 0 ;;
+  esac
+  if [ "$front" != "$boot_app" ]; then
+    echo "$(date): Glasshouse Home not opened: ${front:-nothing} in front since the start on $boot_app"
+    return 0
+  fi
+  luna-send -n 1 luna://com.webos.applicationManager/launch '{"id":"com.webos.app.home"}' 2>/dev/null |
+    grep -q '"returnValue": *true' || return 0
+  home_opened=1
+  echo "$(date): Glasshouse Home opened over $boot_app"
+}
+home_opened=0
+if [ "$home_os" -eq 1 ] && [ -f "$homestage/appinfo.json" ] &&
+   grep -q '"enabled"[[:space:]]*:[[:space:]]*true' /var/lib/tvweb/home.json 2>/dev/null; then
+  mount --bind "$homestage" "$homeapp" 2>/dev/null || true
+  if [ "$webos_major" = "9" ]; then
+    home_reread() { sam_nudge; }
+  else
+    home_reread() { sam_reread_app com.webos.app.home; }
+  fi
+  if home_reread && sam_reports com.webos.app.home '"type": *"web"'; then
+    for pid in $(lg_home_pids); do kill "$pid" 2>/dev/null; done
+    echo "$(date): Glasshouse Home is in LG's Home's place"
+    home_open_at_boot
+  else
+    umount "$homeapp" 2>/dev/null
+    home_reread
+    /usr/bin/node /var/lib/tvweb/lib/home-takeover.js --release >/dev/null 2>&1
+    for pid in $(lg_home_pids); do kill "$pid" 2>/dev/null; done
+    echo "$(date): sam did not take Glasshouse Home - LG's Home kept"
+  fi
+fi
+
 # LG's screen saver ships as QML up to webOS 9 and as Flutter from webOS 10.
 # On the Flutter TVs, custom screen savers were followed by the picture muted,
 # HDMI-CEC and ARC dead and sound on the TV speakers only, until a power cut,
@@ -123,11 +220,6 @@ if [ -n "$stock_type" ] && [ "$stock_type" != "qml" ]; then
   luna-send -n 1 luna://com.webos.applicationManager/releaseBlockSystemApp '{"id":"com.webos.app.screensaver"}' >/dev/null 2>&1 || true
 fi
 held=0
-webos_major=$(sed -n 's/.*webOS[^0-9]*\([0-9][0-9]*\)\..*/\1/p' /etc/issue 2>/dev/null | head -n 1)
-# A G5 (webOS 10.3.1) has no /etc/issue; "Rockhopper release 10.3.1-3006" is
-# in starfish-release, as lib/telemetry.js reads it.
-[ -n "$webos_major" ] ||
-  webos_major=$(sed -n 's/.*release[^0-9]*\([0-9][0-9]*\)\..*/\1/p' /etc/starfish-release 2>/dev/null | head -n 1)
 if [ -n "$stock_type" ] && [ "$stock_type" != "qml" ] && [ "$webos_major" != "10" ] && [ "$webos_major" != "11" ]; then
   if grep -Eq '"(allowExperimentalScreensavers|allowOnWebos10)"[[:space:]]*:[[:space:]]*true' /var/lib/tvweb/config.json 2>/dev/null; then
     echo "$(date): allowExperimentalScreensavers set - custom screen saver not held back"
@@ -161,58 +253,6 @@ if [ -f /var/lib/tvweb/screensaver/.tvweb-screensaver ]; then
         echo "$(date): sam did not read the custom screen saver again - LG's kept, sam not restarted (#366)"
       fi
     fi
-  fi
-fi
-
-# Glasshouse Home in LG's Home's place (lib/home-takeover.js). LG's Home has
-# started about 5 s into boot, in the background, on the empty layout the
-# server left it, so anything opening Home before now showed black; once sam
-# reads the mounted manifest it is stopped, and the TV opens Glasshouse Home's
-# page as Home from then on. Where sam does not take it, LG's files go back
-# under it, its own layout too, and it restarts on that. The server does the
-# same at its start, for a hook that did not run.
-# On webOS 10 and 11 LG's Home is a Flutter app run as
-# "flutter-client -i com.webos.app.home"; webOS 11 only with
-# allowExperimentalHome in config.json. sam ignores the nudge there (above), so
-# the app is reread with a block and release first, as for the screen saver.
-homeapp=/usr/palm/applications/com.webos.app.home
-homestage=/var/lib/tvweb/home-takeover
-home_os=0
-[ "$webos_major" = "9" ] && home_os=1
-[ "$webos_major" = "10" ] && home_os=1
-if [ "$webos_major" = "11" ]; then
-  grep -q '"allowExperimentalHome"[[:space:]]*:[[:space:]]*true' /var/lib/tvweb/config.json 2>/dev/null && home_os=1
-fi
-# A block and release cut short leaves Home blocked across boots, as for the
-# screen saver above, so it is released at every boot where it is ever blocked.
-if [ "$webos_major" = "10" ] || [ "$webos_major" = "11" ]; then
-  luna-send -n 1 luna://com.webos.applicationManager/releaseBlockSystemApp '{"id":"com.webos.app.home"}' >/dev/null 2>&1 || true
-fi
-lg_home_pids() {
-  pidof com.webos.app.home
-  for cmd in /proc/[0-9]*/cmdline; do
-    { tr '\0' ' ' < "$cmd"; } 2>/dev/null | grep -q '^/usr/bin/flutter-client .*-i com\.webos\.app\.home ' || continue
-    pid=${cmd#/proc/}
-    echo "${pid%/cmdline}"
-  done
-}
-if [ "$home_os" -eq 1 ] && [ -f "$homestage/appinfo.json" ] &&
-   grep -q '"enabled"[[:space:]]*:[[:space:]]*true' /var/lib/tvweb/home.json 2>/dev/null; then
-  mount --bind "$homestage" "$homeapp" 2>/dev/null || true
-  if [ "$webos_major" = "9" ]; then
-    home_reread() { sam_nudge; }
-  else
-    home_reread() { sam_reread_app com.webos.app.home; }
-  fi
-  if home_reread && sam_reports com.webos.app.home '"type": *"web"'; then
-    for pid in $(lg_home_pids); do kill "$pid" 2>/dev/null; done
-    echo "$(date): Glasshouse Home is in LG's Home's place"
-  else
-    umount "$homeapp" 2>/dev/null
-    home_reread
-    /usr/bin/node /var/lib/tvweb/lib/home-takeover.js --release >/dev/null 2>&1
-    for pid in $(lg_home_pids); do kill "$pid" 2>/dev/null; done
-    echo "$(date): sam did not take Glasshouse Home - LG's Home kept"
   fi
 fi
 
@@ -294,7 +334,10 @@ fi
   # then start: the sooner it is up, the sooner Home Assistant has the TV's state
   # after a power-on (and the sooner the launcher, if it is the home, can load).
   # The server retries MQTT, so it is fine to start before the network settles.
-  sleep 5
+  # Not where Glasshouse Home was just opened: its page shows the Glasshouse
+  # mark until the server answers, about 12 s after the open with the buffer
+  # (a G5, webOS 10.3.1).
+  [ "$home_opened" -eq 1 ] || sleep 5
   /usr/bin/pkill -9 -f tvweb.js 2>/dev/null || true
   sleep 1
   if [ -f /var/lib/tvweb/services_stopped ]; then

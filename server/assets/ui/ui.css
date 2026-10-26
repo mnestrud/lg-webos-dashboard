@@ -318,7 +318,10 @@ header{display:flex;justify-content:space-between;align-items:flex-start;gap:24p
 .nav-pref-grp{display:flex;flex-direction:column;gap:5px}
 .nav-pref-lbl{font:500 12px 'Manrope';letter-spacing:.08em;text-transform:uppercase;color:var(--w40)}
 .nav-pref .theme-seg{display:flex;gap:4px;width:100%}
-.nav-pref .theme-seg button{flex:1;min-width:0;height:32px;min-height:0;padding:0 4px;font-size:12px;
+.nav-pref .pill-sel{width:100%;min-width:0}
+/* Sized to their words, then sharing what is left: Oscuro, in Spanish, does not
+   fit a third of the sidebar. */
+.nav-pref .theme-seg button{flex:1 1 auto;min-width:0;height:32px;min-height:0;padding:0 4px;font-size:12px;
   letter-spacing:.06em;text-transform:uppercase;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav-help{display:flex;align-items:center;gap:14px;margin:0 12px;padding:10px 12px;border-radius:2px;
   font:500 13.5px 'Manrope';letter-spacing:.10em;text-transform:uppercase;color:var(--w50);text-decoration:none;
@@ -1461,3 +1464,44 @@ button.home-look:active{background:none}
 .home-custom label{display:flex;align-items:center;gap:8px}
 .home-custom input[type=color]{width:40px;height:28px;padding:0;border:1px solid var(--edge);border-radius:6px;background:none}
 .home-wall-empty{aspect-ratio:16/9;display:grid;place-items:center;background:#000;color:#999;border-radius:6px}
+
+/* Cross-panel search: opened from the sidebar or keyboard, so it does not
+   occupy space in the dashboard itself. */
+.nav-search{display:flex;align-items:center;gap:14px;width:calc(100% - 24px);min-height:0;margin:18px 12px 4px;padding:10px 12px;border:0;border-radius:2px;background:transparent;color:var(--w60);font:500 13.5px 'Manrope';letter-spacing:.10em;text-transform:uppercase;text-align:left;cursor:pointer}
+.nav-search:hover{color:var(--w90);background:var(--w06)}
+.nav-search:focus-visible{outline:2px solid var(--w80);outline-offset:-2px}
+.nav-search kbd{margin-left:auto;color:var(--w40);font:500 11px 'Manrope';letter-spacing:0;border:1px solid var(--w25);border-radius:2px;padding:2px 6px}
+.global-search-backdrop{position:fixed;inset:0;z-index:100;display:grid;place-items:start center;padding:clamp(72px,16vh,160px) 20px 20px;background:rgba(0,0,0,.62);overflow-x:hidden}
+.global-search-backdrop[hidden]{display:none}
+.global-search{position:relative;width:min(620px,100%);max-width:100%;min-width:0;margin:0}
+.global-search-input-wrap{position:relative}
+.global-search input{width:100%;max-width:100%;padding:14px 42px 14px 16px;border:1px solid var(--w25);border-radius:2px;background:var(--bg);color:var(--w100);font:inherit;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.global-search input:focus{outline:2px solid var(--w80);outline-offset:2px}
+.global-search-clear{position:absolute;right:1px;top:1px;width:36px;height:calc(100% - 2px);padding:0;border:0;background:transparent;color:var(--w60);font-size:20px;line-height:1;cursor:pointer}
+.global-search-clear:hover,.global-search-clear:focus-visible{color:var(--w100);outline:2px solid var(--w80);outline-offset:-2px}
+.global-search-results{position:relative;top:auto;left:auto;right:auto;width:100%;min-width:0;max-width:100%;max-height:min(60vh,480px);overflow:auto;margin-top:8px;padding:6px;border:1px solid var(--w25);border-radius:2px;background:var(--bg,var(--w06));box-shadow:0 12px 36px rgba(0,0,0,.35)}
+.search-result-count{padding:6px 10px 8px;color:var(--w50);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.search-result-row{display:flex;align-items:center;gap:8px;width:100%;min-width:0}
+.search-result{display:flex;align-items:center;gap:10px;min-width:0;flex:1;padding:10px;border:0;border-radius:2px;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.search-result:hover,.search-result:focus-visible{background:var(--w12);outline:2px solid var(--w80);outline-offset:-2px}
+.search-result-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-result-kind,.search-result-section{flex:0 0 auto;color:var(--w60);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.search-result-kind{padding:2px 5px;border:1px solid var(--w25);border-radius:2px;color:var(--w50);font-size:10px}
+.search-result-row[data-kind="log"] .search-result{background:var(--w06);border-left:2px solid var(--w50)}
+.search-result-row[data-kind="log"] .search-result:hover,.search-result-row[data-kind="log"] .search-result:focus-visible{background:var(--w12)}
+.search-pin{flex:0 0 auto;border:0;background:transparent;color:var(--w60);font-size:18px;cursor:pointer;border-radius:2px}
+.search-pin:focus-visible{outline:2px solid var(--w80);outline-offset:-2px}
+.search-highlight{outline:2px solid var(--w80);outline-offset:4px;animation:search-highlight 2.4s ease-out}
+@keyframes search-highlight{0%,65%{background:var(--w12)}100%{background:transparent}}
+.search-pin.on{color:var(--cand)}
+.nav-shortcuts{display:grid;gap:4px;margin:8px 0}
+.nav-shortcuts:empty{display:none}
+.nav-shortcuts-title{padding:8px 10px 2px;color:var(--w60);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.nav-shortcut-row{display:flex;align-items:center;gap:2px}
+.nav-shortcut{border:0;background:transparent;color:var(--w80);text-align:left;padding:7px 10px;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.nav-shortcut{flex:1;min-width:0}
+.nav-shortcut:hover,.nav-shortcut:focus-visible{background:var(--w12);color:var(--w100);outline:2px solid var(--w80);outline-offset:-2px}
+.nav-shortcut-pin{flex:0 0 32px;width:32px;height:32px;padding:0;border:0;border-radius:2px;background:transparent;color:var(--cand);font-size:16px;line-height:1;cursor:pointer}
+.nav-shortcut-pin:hover{background:var(--w12);color:var(--w100)}
+.nav-shortcut-pin:focus-visible{outline:2px solid var(--w80);outline-offset:-2px}
+@media(max-width:700px){.global-search-backdrop{padding:24px 12px}.global-search-results{max-height:60vh}}

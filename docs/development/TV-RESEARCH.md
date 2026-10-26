@@ -17,6 +17,26 @@ On the same TV, unplugged HDMI 1 and HDMI 3 returned `connected: true`, but
 sublists. Where present, `hdmiPlugIn` takes precedence over `connected` for
 plug detection. The device list does not report per-device power state.
 
+### Selecting and waking a source through a receiver (G3, webOS 9.2.2)
+
+LG's installed `InputPicker/Controllers/ConnectionsInterfaces/Interfaces.qml`
+passes a device's EIM `uniqueId` as HDMI launch parameters
+`{id: "uniqueId", value: "8"}`. `inputcommon`'s `DeepLinkHandler.qml` passes
+them to `ExternalDeviceControlInterfaces/SimplinkController.qml`, which calls
+`com.webos.service.eim/cec/setCECUniqueId`. Without the parameters, that
+controller uses the input's `lastUniqueId`, or its first SIMPLINK device.
+On HDMI 2 with no remembered source, this selected the STEREO 70s receiver
+(ID 5), leaving the PS5 (ID 8, physical address 2.4.0.0) asleep.
+
+On 20 October 2026, with the PS5 confirmed in rest mode, switching through
+HDMI 4 and Home then launching HDMI 2 with its device ID woke it. CEC history
+showed `Set Stream Path` to 2.4.0.0 and the PS5 replying `Report Power Status`
+with `On` (`80:90:00`). The patched Glasshouse Home tile also woke it from
+standby; LG's service sent the CEC Power key itself. No separate power key
+is needed in Glasshouse. A DISPLAY capture showed the receiver's logo even
+while the PS5 reported On, so that picture alone does not establish console
+power state.
+
 ## The picture of an input behind Home (G3, webOS 9.2.2)
 
 With a web app on screen, an HDMI input's receiver stays locked to its
@@ -1009,6 +1029,122 @@ The webOS 9 entries above describe the home app's CRIU checkpoint. On a CX:
   took ("sam had not caught up").
 - The TV has no `/etc/issue`. `/etc/starfish-release` has
   `Rockhopper release 10.3.1-3006`, and `/etc/os-release` `VERSION_ID=10.3.1`.
+
+## Home's button does not change the foreground app (webOS 4.10.2, 55UM7100PLB)
+
+`supported()` already refuses Glasshouse Home on webOS 4 and nothing here
+changes that; this is what was found trying anyway, for whoever looks at
+webOS 4 next.
+
+- `com.webos.app.home`'s `appinfo.json` is laid out the same as on webOS 9:
+  `"type": "native"`, `"main": "file:///usr/bin/com.webos.app.home"`,
+  `"visible": false`, `"defaultWindowType": "home"`.
+- Neither of `lib/samrescan.js`'s two rescan mechanisms exists here. configd
+  has no `profile.blockedAppList` (`"no profile.blockedAppList on this TV, so
+  sam cannot be nudged"`, matching the B8 the file's header already names),
+  and `blockSystemApp`/`releaseBlockSystemApp` are not registered methods at
+  all: `blockSystemApp for com.webos.app.home refused: Unknown method
+  "blockSystemApp" for category "/" (-1)"`. `home-takeover.js`'s `reread()`
+  has no third path for this - the project-wide retreat from restarting sam
+  for a rescan (`#366`) was not re-added for Home specifically, so `take()`
+  fails clean through `giveBack()`/`release()` rather than leaving anything
+  mounted.
+- **The Home button does not make `com.webos.app.home` (or anything else)
+  foreground.** A real press, and a direct
+  `applicationManager/launch {"id":"com.webos.app.home"}` (`returnValue:
+  true`), both left `getForegroundAppInfo` answering whatever was in front
+  before the press, unchanged, while the TV visibly showed a translucent
+  overlay bar over the running app. Whatever draws that bar is not tracked as
+  a foreground app on this firmware, so neither sam-level app-identity
+  swapping nor foreground polling can detect it; any Home-button interception
+  here has to watch the physical key itself (`remotebuttons.js`'s evdev
+  `HOME_CODE` 773 route already does, for the hold-Home gesture) rather than
+  app state.
+- **`getForegroundAppInfo`'s `subscribe: true` only ever answers once here.**
+  It returns its first reply and then never pushes a second one - the pipe
+  does not close either, so a caller waiting on it (rather than on a
+  timeout) blocks indefinitely. Confirmed over several minutes and across
+  both a real press and a synthetic `launch`.
+- **A second, heavier Home app exists:** `com.webos.app.fullhome`, already
+  named `"Home"` at 40 MB in `lib/preload.js`'s own catalog, distinct from
+  `com.webos.app.home` (the overlay). Not tried as a takeover target - it may
+  be the more promising one for a pre-webOS-9 Home replacement, since it is
+  apparently a real, substantial, separately-preloaded app rather than an
+  overlay LG keeps out of the foreground-app API.
+- Device: 55UM7100PLB (2019 LCD), webOS 4.10.2, firmware 05.40.97,
+  `core_os_kernel_version` `4.4.84-p.649.grampians.k5lp.1`, `core_os_name`
+  `Rockhopper`, `webos_imagename` `starfish-dvb-secured`.
+
+## What the TV opens as it starts (G5, webOS 10.3.1)
+
+Measured on 19 October 2026 on an OLED55G56LS, Quick Start+ off.
+
+- **Every power-on is a cold start with Quick Start+ off.** The kernel
+  restores a prebuilt snapshot (`/proc/cmdline` has `snapshot resume=...`,
+  `bootd.log` `--Snapshot=YES`), and `/proc/uptime` restarts at each power-on
+  from standby. The power-on is handled about 10 s in.
+- **bootd chooses the first app.** It reads `/etc/palm/action-condition.json`
+  (`com.webos.bootManager.actionConditionConfPath` unset): the `Input App`
+  action launches the last input (`physicalLastInputApp` in
+  `/var/luna/preferences/general`, Live TV by default). With
+  `general.homeAutoLaunch` `on` and a power-on reason in
+  `com.webos.service.tvpower.fullHomeBootingPowerOnReasons` (`aiKey`,
+  `lastPowerOn`, `localKey`, `remoteKey`, `seniorHelp`), it shows its boot
+  logo (`com.webos.app.bootlogo`, 10.6 to 16.8 s) and launches
+  `com.webos.app.home` with `{"boot": true}` at 14.2 s; LG's Home logged
+  `NL_HOME_SHOWN` (`launch_type` `bootingHome`) at 15.5 s.
+- **With it `off`, LG's Home never comes to the front.** On the remote, bootd
+  logged `homeAutoLaunch(off)`, showed no boot logo and had Live TV in front
+  at 14.2 s; nothing launched `com.webos.app.home` until
+  `com.webos.service.preloadmanager` preloaded it at 67 s, after the boot hook
+  had mounted Glasshouse Home over it.
+- **A restart from the menu or `reboot` is `micomPower`.** Not in the list:
+  with `homeAutoLaunch` `on`, bootd still put Live TV in front at 14.9 s.
+- **Writing `homeAutoLaunch`** through the settings service turns
+  `checkHomeAutoLaunchValue` from `default` to `user`.
+- **bootd logs the app it put in front** as
+  `BootSequencer) '<id>' is foreground` in `/var/log/bootd.log`, which is on
+  tmpfs and holds the current boot only.
+- **The boot hook ran 31 to 36 s in.** Mounting and rereading took 8 s with
+  LG's Home running in front, 1 to 2 s with it never
+  started, and 10 s once. sam's `last_input_handler` relaunched Home 1 s after
+  the hook stopped LG's Home in front, with nothing in front in between.
+- **Wake-on-LAN did not wake it** from `Power Off` after a `powerOff`, on
+  either interface, with `network.wolwowlOnOff` `true`.
+- **With Quick Start+ off it powers off 4 to 6 s after Active Standby**, so
+  a `powerOn` 6 s after a `powerOff` found it gone.
+- **With Quick Start+ on**, a `powerOff` went to Suspend 5 s after Active
+  Standby (`PowerOffReason` `oslbSaving`). Woken by the remote from Suspend,
+  uptime carried on and the mount was still in place; bootd logged
+  `homeAutoLaunch(on)`, launched `com.webos.app.home`, and Glasshouse Home
+  was in front 0.76 s later.
+
+## What the TV opens as it starts (G3, webOS 9.2.2)
+
+Measured on 19 October 2026 on an OLED55G36LA.
+
+- **With Quick Start+ on, a wake runs bootd too.** Woken by the remote from
+  Suspend, it logged `homeAutoLaunch(on)` and launched `com.webos.app.home`
+  with `{"boot": true}`: Glasshouse Home, still mounted, in front 1.3 s later.
+  With auto launch `off`, bootd put the last input (HDMI 4) in front instead.
+- **Wake-on-LAN is `wakeOnLan`,** and bootd stayed on HDMI 4 with auto launch
+  `on`.
+- **`fullHomeBootingPowerOnReasons` is missing** (`missingConfigs`); bootd
+  opened Home on `remoteKey` and not on `micomPower`.
+- **A cold start logs the first app** as on the G5: `'com.webos.app.hdmi4' is
+  foreground` at 13.4 s, after `remoteKey` at 9 s.
+- **Off and on again 6 s apart** goes Active, Active Standby, Active, with no
+  boot: bootd runs and puts the last input in front, and the boot hook does
+  not run.
+- **The settings service gave no `quickStartMode`** for a `getSystemSettings`
+  `quickStartMode` sent as the TV woke from Active Standby, twice; read
+  seconds later it answered.
+- **`powerOn` with `{"reason": "remoteKey"}`,** sent over SSH in Active
+  Standby, wakes it as the remote does: tvpower and bootd log `remoteKey`.
+- **Writing `homeAutoLaunch`** left `checkHomeAutoLaunchValue` at `default`,
+  unlike the G5.
+- **With Glasshouse Home first, the boot hook** started 30 s in and had it in
+  place at 34 to 39 s, the screen saver mount after it.
 
 ## Muting and pausing (webOS 5.6.2, CX)
 

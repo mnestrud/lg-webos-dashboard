@@ -1296,10 +1296,29 @@ LG's process is killed, or the web page is killed through WebAppMgr's
 instance was in front, sam's `last_input_handler` opens Home again about a
 second later, as the new app.
 
-The boot hook (`50-tvweb.sh`) mounts it again about 25 s into a cold start and
-stops LG's Home, which has started in the background by then; the server does
-the same at its start, for a hook that did not run. Until then anything that
-opens Home opens LG's. Where the owner chooses **Hide LG's Home while the TV
+The boot hook (`50-tvweb.sh`) mounts it again about 25 s into a cold start
+(31 to 36 s on a G5), before its other mounts, and stops LG's Home where it has
+started by then; the server does the same at its start, for a hook that did
+not run. Until then anything that opens Home opens LG's. With LG's
+`homeAutoLaunch` on, bootd opens LG's Home about 14 s into every power-on, so
+while Glasshouse Home is on the server switches it off, keeping the owner's
+value as `lgAutoLaunch` in `home.json` and putting it back on switching off.
+bootd then opens the last input instead. Where it was on, the hook launches
+Glasshouse Home once mounted, if the power-on reason is one bootd opens Home
+for and the app bootd logged as foreground (`/var/log/bootd.log`) is an input
+still in front; it then starts the server without its 5 s wait, as the page
+shows the Glasshouse mark until the server answers. Switched back on before
+it had powered off, the TV wakes from Active Standby without a boot, so the
+server opens Glasshouse Home instead, 1.5 s after the wake, while the first
+input is still in front. A source choice, standby, switch-off or server stop
+cancels that launch, including while the power-on reason is being read.
+Auto launch is held off only after a successful takeover; a refused takeover
+puts its saved value back. Switching off waits for any pending settings work
+before restoring it, and an already-off value needs no write or snapshot.
+With Quick Start+ on, a power-on resumes the TV with the mount in place, and bootd opens
+Glasshouse Home only while auto launch is on, so there the owner's value is
+put back; Quick Start+ is read at server start and at each switch on or off,
+and an unreadable value, as just after a wake, changes nothing. Where the owner chooses **Hide LG's Home while the TV
 starts** (`hideLgHomeAtStart` in `home.json`, off by default, since it outlives
 Glasshouse), LG's layout files in `/mnt/lg/cmn_data/manifest` hold an empty
 layout while Glasshouse Home has the place, which LG's Home reads when it
